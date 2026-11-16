@@ -4,7 +4,7 @@
 
 核心顺序是：**先确认用途与真实类型，再查模板和默认值；真正未定的玩法数值与资源才交给玩家或 CLI 决定。**
 
-当前版本：**1.3.0**。支持按 1.6 / 1.7 分流制作、排错和迁移，并在重做前确认交付与验收边界。此次增加批量图形工作流和本机版本查证。技能内容包含 AI 辅助编写；静态检查、编译成功和游戏内验证分别记录。
+当前版本：**1.4.0**。支持按 1.6 / 1.7 分流制作、排错和迁移，并在重做前确认交付与验收边界。此次新增 rimworld-publish：以 rimworld-release 产物为源，经 steamcmd 按需上传 Steam 创意工坊；安装与登录仅发生在实际上传时，Steam 密码与令牌不经过代理。技能内容包含 AI 辅助编写；静态检查、编译成功和游戏内验证分别记录。
 
 ## 选择 Basic 或 Image
 
@@ -13,9 +13,9 @@
 | Basic | [basic/](basic/) / `rimworld-moddev-basic` | 使用已有、外部提供或允许复用的素材，不接入平台生图流程 |
 | Image | [image/](image/) / `rimworld-moddev-image` | 需要外观需求 → 资源规格 → 生图 → 导入 PNG → 视觉检查 → 绑定引用 → 游戏验收 |
 
-两版都包含相同的十个入口、共享需求/计划/制作/复查流程、版本资料与资源检查。Image 需要会话中实际可用的图像工具，或用户选定且可调用的外部来源；安装技能不会自动获得生图服务。
+两版都包含相同的十一个入口、共享需求/计划/制作/复查流程、版本资料与资源检查。Image 需要会话中实际可用的图像工具，或用户选定且可调用的外部来源；安装技能不会自动获得生图服务。
 
-**同一工程/客户端只启用一版。** 两版技能同名，同时安装可能出现重复入口。切换时先移除或禁用旧版；手动安装须替换整套十个技能及资源，避免残留 Image 专属文件。版本入口会引用公共资料，不能只安装一个薄入口。
+**同一工程/客户端只启用一版。** 两版技能同名，同时安装可能出现重复入口。切换时先移除或禁用旧版；手动安装须替换整套十一个技能及资源，避免残留 Image 专属文件。版本入口会引用公共资料，不能只安装一个薄入口。
 
 ## 按版本选择入口
 
@@ -27,7 +27,8 @@
 | `rimworld-help` | 第一次使用、目标尚不明确，或不知道下一步 |
 | `rimworld-setup` | 检查游戏路径、编译环境、检索/MCP 和必要工具能力 |
 | `rimworld-mod` / `rimworld-debug` | 版本未定、双版本或继续使用旧名称时的路由入口 |
-| `rimworld-release` | 核对成果、依赖、资源来源并准备发行包；明确要求时才上传工坊 |
+| `rimworld-release` | 核对成果、依赖、资源来源并准备发行包 |
+| `rimworld-publish` | 把发行包上传或更新到 Steam 创意工坊；steamcmd 安装与登录按需进行，上传需明确授权 |
 
 ## 安装
 
@@ -39,7 +40,7 @@
 
 ### Codex / Cursor 手动安装
 
-克隆或下载本仓库，选择 `basic/skills/` 或 `image/skills/`，把其中**十个技能文件夹和 catalog.json 整体复制**到目标 mod 工程的 `.agents/skills/`：
+克隆或下载本仓库，选择 `basic/skills/` 或 `image/skills/`，把其中**十一个技能文件夹和 catalog.json 整体复制**到目标 mod 工程的 `.agents/skills/`：
 
 ```text
 YourMod/
@@ -54,7 +55,8 @@ YourMod/
     ├── rimworld-setup/
     ├── rimworld-mod/
     ├── rimworld-debug/
-    └── rimworld-release/
+    ├── rimworld-release/
+    └── rimworld-publish/
 ```
 
 保留各技能中的 `references/`、`scripts/` 和 `data/`；不要只复制 SKILL.md 或把 Basic/Image 两个父目录一起放进去。已有同名技能先确认来源，不直接覆盖自己的修改。
@@ -178,15 +180,15 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 插件用户从原安装入口刷新/更新；手动用户重新下载并替换选定版本的整套技能。维护时从公共源码同步两版后一起发布，保留 Basic/Image 的资源差异。
 
-发行前仍需游戏验收。上传工坊、更改游戏启用列表或启动游戏需要相应任务授权，不由安装技能自动执行。欢迎通过 Issues 提交问题，附客户端、游戏/上游版本、相关需求及必要的脱敏日志片段。
+发行前仍需游戏验收。上传工坊由 rimworld-publish 在明确授权后执行，steamcmd 安装与 Steam 登录仅在实际准备上传时进行，密码与登录令牌不经过代理、不随技能分发。更改游戏启用列表或启动游戏仍需相应任务授权，不由安装技能自动执行。欢迎通过 Issues 提交问题，附客户端、游戏/上游版本、相关需求及必要的脱敏日志片段。
 
 ## English quick start
 
-RimWorld ModDev Skill is a workflow for agents that support Agent Skills. Version **1.3.0** adds a batch graphics workflow and local, build-aware lookups to the existing 1.6/1.7 development, debugging and migration routes.
+RimWorld ModDev Skill is a workflow for agents that support Agent Skills. Version **1.4.0** adds rimworld-publish — on-demand Steam Workshop upload of release packages via steamcmd — to the existing 1.6/1.7 development, debugging, migration and batch-graphics routes. Installation and login happen only when an upload is actually requested; Steam passwords and tokens never pass through the agent.
 
 Choose **Basic** for supplied or reused assets, or **Image** for a workflow that includes image generation. Enable one variant only. Image generation requires an actual tool or a configured, supported provider; the skill does not supply the service.
 
-For manual setup, copy all ten skill folders and catalog.json from `basic/skills/` or `image/skills/` into your mod project's `.agents/skills/`, keeping references, scripts and data. Cursor plugin users can install one variant through a supported marketplace/repository import. The manifests use Cursor's format.
+For manual setup, copy all eleven skill folders and catalog.json from `basic/skills/` or `image/skills/` into your mod project's `.agents/skills/`, keeping references, scripts and data. Cursor plugin users can install one variant through a supported marketplace/repository import. The manifests use Cursor's format.
 
 Start with `rimworld-help` or `rimworld-setup`. For development, provide your game version, project/game paths, intended player behavior, constraints, and any selected upstream mods. Choose user-controlled values, agent-decided values, or a mixed mode. The agent establishes the actual content type, verifies templates/defaults and interfaces, records a concrete plan, and obtains confirmation before implementation unless an applicable prior approval or explicit delegation already exists.
 

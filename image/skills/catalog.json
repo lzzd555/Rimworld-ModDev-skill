@@ -6,6 +6,7 @@
     {"name": "rimworld-mod", "targets": ["1.6", "1.7"], "requires": ["rimworld-debug"]},
     {"name": "rimworld-debug", "targets": ["1.6", "1.7"], "requires": ["rimworld-mod"]},
     {"name": "rimworld-release", "targets": ["1.6", "1.7"], "requires": ["rimworld-mod", "rimworld-debug"]},
+    {"name": "rimworld-publish", "targets": ["1.6", "1.7"], "requires": ["rimworld-release"]},
     {"name": "rimworld-16-mod", "targets": ["1.6"], "requires": ["rimworld-mod", "rimworld-debug"]},
     {"name": "rimworld-16-debug", "targets": ["1.6"], "requires": ["rimworld-mod", "rimworld-debug"]},
     {"name": "rimworld-17-mod", "targets": ["1.7"], "requires": ["rimworld-mod", "rimworld-debug"]},
