@@ -1,6 +1,6 @@
 # 工坊上传
 
-上传源是 rimworld-release 生成的 staging 目录：steamcmd 把 `contentfolder` 整个递归上传、不挑文件，所以它只能指向发行产物目录，其下应恰有一个 mod 文件夹（内含 `About/`）。预检（`preflight`）通过才继续。
+上传源是 rimworld-release 生成的 staging 目录。steamcmd 会把 `contentfolder` 所指目录的**内容**整个递归上传，而 RimWorld 工坊物品要求 `About/` 位于物品根目录，因此 **contentfolder 必须指向 mod 文件夹本身**（staging 可为"恰含一个 mod 文件夹"的父目录，也可直接就是 mod 文件夹，preflight 两种都接受）。2026-11 实测：contentfolder 指向父目录会把 mod 文件夹作为子目录一并上传，玩家下载后游戏无法识别该物品。预检（`preflight`）通过才继续。
 
 ## VDF 字段（RimWorld 取值）
 
@@ -8,10 +8,10 @@
 | --- | --- |
 | appid | `294100` |
 | publishedfileid | 创建留 `"0"`；更新填 `About/PublishedFileId.txt` 的值 |
-| contentfolder | staging 目录绝对路径 |
-| previewfile | 预览图绝对路径，最低 512×512 PNG/JPG（RimWorld 惯例 512×512，常放 `About/Preview.png`） |
+| contentfolder | mod 文件夹本身的绝对路径（其内容成为物品根；勿指向父目录） |
+| previewfile | 预览图绝对路径，最低 512×512、**小于 1MB** 的 PNG/JPG（常放 `About/Preview.png`；JPEG 内容配 .png 文件名可用，工坊按内容识别） |
 | visibility | 0 公开 / 1 好友 / 2 私密 |
-| title / description / changenote | About 名称 / 工坊描述（换行写 `\n`）/ 本次变更说明 |
+| title / description / changenote | About 名称 / 工坊描述 / 本次变更说明。描述换行用真实换行字节（2026-11 实测 `\n` 转义会以字面量出现在工坊页）；描述支持 `[h1]`/`[list]`/`[b]`/`[url]` 等 BBCode |
 
 `scripts/publish.py vdf` 从预检结果与参数生成 `.local/workshop-upload.vdf`。VDF 只放 `.local/`，绝不放进 contentfolder：创建成功后 steamcmd 会把新物品 ID 写回该文件，它属于本机状态，不应被再次上传。
 
@@ -38,6 +38,7 @@ steamcmd +login <账号名> +workshop_build_item <vdf> +quit
 | 输出特征 | 处理 |
 | --- | --- |
 | `Cached credentials not found`，或非交互运行下停在密码提示/超时挂起 | 令牌失效：请用户在终端重新交互登录（见 [steam-env.md](steam-env.md)），代理不代输密码 |
+| `SubmitItemUpdate ... Result: LimitExceeded`（游戏内上传器为 `OnItemSubmitted failure`） | 预览图超过工坊 1MB 硬上限：压缩/降分辨率（JPEG 高质量通常可压到 200KB 级）后重传；preflight 已前置检查 |
 | `ERROR!` 含 timeout / 连接类字样 | 瞬时网络问题：原样重试一次，再失败如实报告 |
 | `Failed to init session manager` 等会话类错误 | 核对 steamhome 隔离配置；同一专用目录同时只能跑一个 steamcmd，等待现有进程结束 |
 | 登录层通过但上传报权限 / No subscription | 核对账号持有 RimWorld、VDF appid 为 294100、物品属于该账号 |

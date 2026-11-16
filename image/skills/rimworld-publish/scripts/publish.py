@@ -81,7 +81,13 @@ def classify_login(output):
     lower = output.lower()
     if "logged in ok" in lower:
         return "ok"
+    # 2026-11 实测：新版 steamcmd（client 1794537082+）免密成功时不打印 "Logged in OK"，
+    # 而是输出 "Logging in user 'x' ... to Steam Public...OK" + "Waiting for user info...OK"
+    if "logging in user" in lower and "waiting for user info...ok" in lower:
+        return "ok"
     if "cached credentials not found" in lower or "password" in lower:
+        return "relogin"
+    if "failed" in lower and "login" in lower:
         return "relogin"
     return "unknown"
 
@@ -127,6 +133,9 @@ def preflight(staging, project=None, preview=None):
     if staging.is_dir():
         mods = [p for p in sorted(staging.iterdir())
                 if p.is_dir() and (p / "About" / "About.xml").is_file()]
+        if not mods and (staging / "About" / "About.xml").is_file():
+            # 2026-11 实测：staging 直接就是 mod 文件夹（About/About.xml 在其下）同样合法
+            mods = [staging]
         if len(mods) != 1:
             issues.append(f"staging 应恰含一个带 About/About.xml 的 mod 文件夹，找到 {len(mods)} 个: "
                           + str([p.name for p in mods]))
@@ -159,6 +168,13 @@ def preflight(staging, project=None, preview=None):
                 issues.append(f"预览图 {size[0]}x{size[1]} 低于最低 512x512")
             else:
                 preview_info["ok"] = True
+            # 2026-11 实测：Steam 工坊 preview 硬上限 1MB，超限时 SubmitItemUpdate 报 LimitExceeded；
+            # JPEG 内容配 .png 文件名可用（工坊按内容识别）。
+            size_bytes = Path(preview_path).stat().st_size
+            preview_info["sizeBytes"] = size_bytes
+            if size_bytes > 1_000_000:
+                issues.append(f"预览图 {size_bytes} 字节超过工坊 1MB 上限（SubmitItemUpdate 会报 "
+                              f"LimitExceeded）；可转 JPEG 压缩，扩展名无需更改")
 
     published_id = None
     for base in ([mod / "About"] if mod else []) + ([project / "About"] if project else []):
@@ -174,6 +190,7 @@ def preflight(staging, project=None, preview=None):
         "passed": not issues,
         "staging": str(staging),
         "modFolder": mod.name if mod else None,
+        "modPath": str(mod) if mod else None,
         "modName": name,
         "modVersion": version,
         "supportedVersions": supported,
@@ -190,8 +207,14 @@ def escape_vdf(value):
 
 
 def vdf_text(value):
-    """Escape text for VDF; accept both real newlines and literal \\n."""
-    return escape_vdf(value.replace("\\n", "\n"))
+    """Escape text for VDF; accept literal \\n.
+
+    2026-11 实测：描述值内的 \\n 转义会以字面量文本出现在工坊页（"看着有多余的\\n"），
+    而带引号 VDF 字符串内的真实换行字节会被 steamcmd 正确保留为换行。
+    故这里把字面 \\n 转为真实换行并原样写入，只转义反斜杠/引号/制表符。
+    """
+    value = value.replace("\\r", "").replace("\\n", "\n")
+    return value.replace("\\", "\\\\").replace('"', '\\"').replace("\t", "\\t")
 
 
 def read_vdf_id(vdf_path):
@@ -268,7 +291,10 @@ def cmd_vdf(args):
     fields = [
         ("appid", APPID),
         ("publishedfileid", check["publishedFileId"] or "0"),
-        ("contentfolder", str(Path(args.staging).resolve())),
+        # 2026-11 实测：steamcmd 递归上传 contentfolder 的**内容**；RimWorld 工坊物品要求
+        # About/ 位于物品根，故 contentfolder 必须指向 mod 文件夹本身。指向其父目录会把
+        # mod 文件夹作为子目录带上，游戏无法识别该物品。
+        ("contentfolder", str(Path(check["modPath"]).resolve())),
         ("previewfile", str(Path(check["preview"]["path"]).resolve())),
         ("visibility", str(args.visibility)),
         ("title", args.title or check["modName"]),
