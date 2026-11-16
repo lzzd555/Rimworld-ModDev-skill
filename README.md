@@ -164,6 +164,10 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 每次增量完成后交付并等待新需求。要求中止某部分时保存停止位置与遗留项；再次继续时核对实际文件和证据。项目文档不替代真实实现，来源/版本变化会使相关证据失效。
 
+### 发行与工坊上传
+
+发行先由 rimworld-release 核对版本、依赖与素材许可并产出干净发行包，再由 [rimworld-publish](basic/skills/rimworld-publish/SKILL.md) 按需上传或更新 Steam 创意工坊。上传前 preflight 核对 staging 布局（About/About.xml 位于 mod 文件夹根，staging 直接为该文件夹或恰含该文件夹均可）、预览图下限 512×512 与 1MB 上限、以及已回写的 PublishedFileId；VDF 的 contentfolder 指向 mod 文件夹本身，steamcmd 递归上传其内容。首次上传成功后用 adopt 把工坊物品 ID 写回 About/PublishedFileId.txt，之后同一物品走更新。
+
 ## 工具与资源准备
 
 批量换款、多方向或需要地图图和菜单图标配套时，由资源分支进入 [GFX 专项流程](basic/skills/rimworld-mod/references/gfx-workflow.md)。记录已认可样稿与需保留的部位，再按实际消费者核对款式、方向和文件映射。分开记录工程绑定、本机同步和实机显示。Basic 可处理已有素材；Image 需要生图时沿用图像管线。两版仍从原制作入口调用，无须额外安装一个 GFX 技能。
@@ -193,5 +197,7 @@ For manual setup, copy all eleven skill folders and catalog.json from `basic/ski
 Start with `rimworld-help` or `rimworld-setup`. For development, provide your game version, project/game paths, intended player behavior, constraints, and any selected upstream mods. Choose user-controlled values, agent-decided values, or a mixed mode. The agent establishes the actual content type, verifies templates/defaults and interfaces, records a concrete plan, and obtains confirmation before implementation unless an applicable prior approval or explicit delegation already exists.
 
 For migration, choose basic compatibility or improved implementation; if unspecified, the agent asks. For a rewrite, agree on technical delivery, usable target functionality, or release readiness, including relevant test cases and who supplies game-test evidence. These choices are independent; compilation is not gameplay acceptance. Independent work can be delegated to available, authorized subagents.
+
+For release, rimworld-release verifies versions, dependencies and asset licenses and produces a clean package; rimworld-publish then uploads or updates it on the Steam Workshop via steamcmd on explicit request. Preflight checks the staging layout (About/About.xml at the mod folder root), preview image limits (min 512×512, max 1MB) and the recorded PublishedFileId; the VDF's contentfolder points at the mod folder itself, and a first successful upload writes the item id back into About/PublishedFileId.txt for later updates. Steam passwords and login tokens never pass through the agent.
 
 Project records support incremental additions and resuming work. Evidence is reused only while its source and conditions remain valid. Selected exact-build catalogs and query scripts are included; game code, decompiled bodies, project build tools, raw local databases and credentials are excluded. Static checks and compilation do not replace in-game acceptance.
