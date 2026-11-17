@@ -8,11 +8,17 @@
 2. **通过 Steam 安装的 RimWorld**（提供 Steamworks 库与 294100 的 app 上下文；账号需拥有 RimWorld）。
 3. 库路径自动探测，找不到时设环境变量 `RIMWORLD_STEAM_DYLIB` 或传 `--dylib`：
 
-| 平台 | 默认探测路径 |
+探测顺序（2026-11 实测补充）：先取各平台默认 Steam 安装根——Windows 优先读注册表
+`HKCU/HKLM:\Software\Valve\Steam\SteamPath`（主安装可在任意盘，实测 d:/steam），
+再加 `Program Files (x86)`/`Program Files` 下的常规位置；随后解析每个根的
+`steamapps/libraryfolders.vdf` 收齐所有附加库（自定义盘符库也在内）；最后在每个库的
+`steamapps/common/RimWorld/` 下按平台找库文件：
+
+| 平台 | 库文件相对路径 |
 | --- | --- |
-| macOS | `~/Library/Application Support/Steam/steamapps/common/RimWorld/RimWorld.app/Contents/MacOS/libsteam_api.dylib` |
-| Windows | `…/steamapps/common/RimWorld/steam_api64.dll` |
-| Linux | `…/steamapps/common/RimWorld/libsteam_api.so` |
+| macOS | `RimWorld.app/Contents/MacOS/libsteam_api.dylib` |
+| Windows | `steam_api64.dll`（及 `RimWorldWin64/steam_api64.dll` 旧布局） |
+| Linux | `libsteam_api.so` |
 
 macOS 的库是 universal binary（x86_64 + arm64），arm64 进程直接加载，无需 Rosetta。库与调用方按架构匹配即可，API 三平台一致。
 

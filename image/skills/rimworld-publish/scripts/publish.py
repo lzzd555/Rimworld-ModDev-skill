@@ -40,6 +40,48 @@ def emit(obj):
     print(json.dumps(obj, ensure_ascii=False, indent=2))
 
 
+def _steam_library_roots():
+    """Steam 库根目录：默认安装位 + libraryfolders.vdf 声明的附加库。
+
+    2026-11 实测：Steam 库可位于任意盘符（如 D:\\Steam），只探测默认安装路径
+    会漏库；解析每个默认根下 steamapps/libraryfolders.vdf 的 "path" 条目补全。
+    """
+    system = platform.system()
+    if system == "Windows":
+        roots = [Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "Steam",
+                 Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "Steam"]
+        # 主安装可位于任意盘（实测 d:/steam）：注册表 SteamPath 是权威位置
+        try:
+            import winreg
+            for hive in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+                try:
+                    with winreg.OpenKey(hive, r"Software\Valve\Steam") as key:
+                        value, _ = winreg.QueryValueEx(key, "SteamPath")
+                        roots.insert(0, Path(value))
+                        break
+                except OSError:
+                    continue
+        except ImportError:
+            pass
+    elif system == "Darwin":
+        roots = [Path.home() / "Library/Application Support/Steam"]
+    else:
+        roots = [Path.home() / ".steam/steam", Path.home() / ".local/share/Steam"]
+    for root in list(roots):
+        vdf = root / "steamapps" / "libraryfolders.vdf"
+        if not vdf.is_file():
+            continue
+        try:
+            text = vdf.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        for match in re.finditer(r'"path"\s*"([^"]+)"', text):
+            p = Path(match.group(1).replace("\\\\", "\\"))
+            if p.is_dir() and p not in roots:
+                roots.append(p)
+    return [r for r in roots if r.is_dir()]
+
+
 def find_dylib(override=None):
     """Locate RimWorld's bundled Steamworks library."""
     if override:
@@ -49,17 +91,19 @@ def find_dylib(override=None):
     if env:
         p = Path(env).expanduser()
         return p if p.is_file() else None
-    common = Path.home() / "Library/Application Support/Steam/steamapps/common"
     system = platform.system()
-    candidates = {
-        "Darwin": [common / "RimWorld/RimWorld.app/Contents/MacOS/libsteam_api.dylib",
-                   common / "RimWorld/RimWorldMac.app/Contents/PlugIns/steam_api.bundle/Contents/MacOS/libsteam_api.dylib"],
-        "Windows": [common / "RimWorld/steam_api64.dll", common / "RimWorld/RimWorldWin64/steam_api64.dll"],
-        "Linux": [common / "RimWorld/libsteam_api.so"],
+    rel_candidates = {
+        "Darwin": ["steamapps/common/RimWorld/RimWorld.app/Contents/MacOS/libsteam_api.dylib",
+                   "steamapps/common/RimWorld/RimWorldMac.app/Contents/PlugIns/steam_api.bundle/Contents/MacOS/libsteam_api.dylib"],
+        "Windows": ["steamapps/common/RimWorld/steam_api64.dll",
+                    "steamapps/common/RimWorld/RimWorldWin64/steam_api64.dll"],
+        "Linux": ["steamapps/common/RimWorld/libsteam_api.so"],
     }.get(system, [])
-    for cand in candidates:
-        if cand.is_file():
-            return cand
+    for root in _steam_library_roots():
+        for rel in rel_candidates:
+            cand = root / rel
+            if cand.is_file():
+                return cand
     return None
 
 
