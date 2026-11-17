@@ -4,7 +4,7 @@
 
 核心顺序是：**先确认用途与真实类型，再查模板和默认值；真正未定的玩法数值与资源才交给玩家或 CLI 决定。**
 
-当前版本：**1.4.1**。支持按 1.6 / 1.7 分流制作、排错和迁移，并在重做前确认交付与验收边界。此次新增 rimworld-publish：以 rimworld-release 产物为源，经 steamcmd 按需上传 Steam 创意工坊；安装与登录仅发生在实际上传时，Steam 密码与令牌不经过代理。技能内容包含 AI 辅助编写；静态检查、编译成功和游戏内验证分别记录。
+当前版本：**1.5.0**。支持按 1.6 / 1.7 分流制作、排错和迁移，并在重做前确认交付与验收边界。1.5.0 起 rimworld-publish 改用 Steamworks SDK 直连桌面客户端会话上传创意工坊：以 rimworld-release 产物为源，支持多语言标题/描述槽与截图库，无令牌无密码，Steam 密码不经过代理。技能内容包含 AI 辅助编写；静态检查、编译成功和游戏内验证分别记录。
 
 ## 选择 Basic 或 Image
 
@@ -166,7 +166,7 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 ### 发行与工坊上传
 
-发行先由 rimworld-release 核对版本、依赖与素材许可并产出干净发行包，再由 [rimworld-publish](basic/skills/rimworld-publish/SKILL.md) 按需上传或更新 Steam 创意工坊。上传前 preflight 核对 staging 布局（About/About.xml 位于 mod 文件夹根，staging 直接为该文件夹或恰含该文件夹均可）、预览图下限 512×512 与 1MB 上限、以及已回写的 PublishedFileId；VDF 的 contentfolder 指向 mod 文件夹本身，steamcmd 递归上传其内容。首次上传成功后用 adopt 把工坊物品 ID 写回 About/PublishedFileId.txt，之后同一物品走更新。
+发行先由 rimworld-release 核对版本、依赖与素材许可并产出干净发行包，再由 [rimworld-publish](basic/skills/rimworld-publish/SKILL.md) 按需上传或更新 Steam 创意工坊。上传前 preflight 核对 staging 布局（About/About.xml 位于 mod 文件夹根，staging 直接为该文件夹或恰含该文件夹均可）、预览图下限 512×512 与 1MB 上限、已回写的 PublishedFileId、本机 Steamworks 库与 `public/` 页面素材；上传经 RimWorld 自带的 Steamworks 库直连桌面客户端登录会话（无需 steamcmd 与令牌），内容根为 mod 文件夹本身，并可按 `public/` 约定写入多语言标题/描述槽与截图库（快照式替换）。首次上传成功后用 adopt 把工坊物品 ID 写回 About/PublishedFileId.txt，之后同一物品走更新，inspect 按语言读回自验证。
 
 ## 工具与资源准备
 
@@ -184,11 +184,11 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 插件用户从原安装入口刷新/更新；手动用户重新下载并替换选定版本的整套技能。维护时从公共源码同步两版后一起发布，保留 Basic/Image 的资源差异。
 
-发行前仍需游戏验收。上传工坊由 rimworld-publish 在明确授权后执行，steamcmd 安装与 Steam 登录仅在实际准备上传时进行，密码与登录令牌不经过代理、不随技能分发。更改游戏启用列表或启动游戏仍需相应任务授权，不由安装技能自动执行。欢迎通过 Issues 提交问题，附客户端、游戏/上游版本、相关需求及必要的脱敏日志片段。
+发行前仍需游戏验收。上传工坊由 rimworld-publish 在明确授权后执行，依赖桌面 Steam 客户端的登录会话（加载 RimWorld 自带的 Steamworks 库，无安装步骤、无令牌维护），Steam 密码不经过代理、不随技能分发。更改游戏启用列表或启动游戏仍需相应任务授权，不由安装技能自动执行。欢迎通过 Issues 提交问题，附客户端、游戏/上游版本、相关需求及必要的脱敏日志片段。
 
 ## English quick start
 
-RimWorld ModDev Skill is a workflow for agents that support Agent Skills. Version **1.4.1** adds rimworld-publish — on-demand Steam Workshop upload of release packages via steamcmd — to the existing 1.6/1.7 development, debugging, migration and batch-graphics routes. Installation and login happen only when an upload is actually requested; Steam passwords and tokens never pass through the agent.
+RimWorld ModDev Skill is a workflow for agents that support Agent Skills. Version **1.5.0** reworks rimworld-publish — on-demand Steam Workshop upload of release packages via the Steamworks SDK bundled with RimWorld, reusing the desktop client's logged-on session (no steamcmd, no tokens) and adding per-language title/description slots plus the screenshot gallery — on top of the existing 1.6/1.7 development, debugging, migration and batch-graphics routes. Steam passwords never pass through the agent.
 
 Choose **Basic** for supplied or reused assets, or **Image** for a workflow that includes image generation. Enable one variant only. Image generation requires an actual tool or a configured, supported provider; the skill does not supply the service.
 
@@ -198,6 +198,6 @@ Start with `rimworld-help` or `rimworld-setup`. For development, provide your ga
 
 For migration, choose basic compatibility or improved implementation; if unspecified, the agent asks. For a rewrite, agree on technical delivery, usable target functionality, or release readiness, including relevant test cases and who supplies game-test evidence. These choices are independent; compilation is not gameplay acceptance. Independent work can be delegated to available, authorized subagents.
 
-For release, rimworld-release verifies versions, dependencies and asset licenses and produces a clean package; rimworld-publish then uploads or updates it on the Steam Workshop via steamcmd on explicit request. Preflight checks the staging layout (About/About.xml at the mod folder root), preview image limits (min 512×512, max 1MB) and the recorded PublishedFileId; the VDF's contentfolder points at the mod folder itself, and a first successful upload writes the item id back into About/PublishedFileId.txt for later updates. Steam passwords and login tokens never pass through the agent.
+For release, rimworld-release verifies versions, dependencies and asset licenses and produces a clean package; rimworld-publish then uploads or updates it on the Steam Workshop on explicit request, driving RimWorld's bundled Steamworks library against the logged-on desktop client. Preflight checks the staging layout (About/About.xml at the mod folder root), preview image limits (min 512×512, max 1MB), the recorded PublishedFileId, the local Steamworks library and the `public/` page-asset folder; per-language title/description slots and the screenshot gallery are written from `public/`, and a first successful upload writes the item id back into About/PublishedFileId.txt for later updates. Steam passwords never pass through the agent.
 
 Project records support incremental additions and resuming work. Evidence is reused only while its source and conditions remain valid. Selected exact-build catalogs and query scripts are included; game code, decompiled bodies, project build tools, raw local databases and credentials are excluded. Static checks and compilation do not replace in-game acceptance.
