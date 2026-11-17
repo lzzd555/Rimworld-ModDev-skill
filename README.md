@@ -4,7 +4,7 @@
 
 核心顺序是：**先确认用途与真实类型，再查模板和默认值；真正未定的玩法数值与资源才交给玩家或 CLI 决定。**
 
-当前版本：**1.5.0**。支持按 1.6 / 1.7 分流制作、排错和迁移，并在重做前确认交付与验收边界。1.5.0 起 rimworld-publish 改用 Steamworks SDK 直连桌面客户端会话上传创意工坊：以 rimworld-release 产物为源，支持多语言标题/描述槽与截图库，无令牌无密码，Steam 密码不经过代理。技能内容包含 AI 辅助编写；静态检查、编译成功和游戏内验证分别记录。
+当前版本：**1.5.1**。支持按 1.6 / 1.7 分流制作、排错和迁移，并在重做前确认交付与验收边界。1.5.1 起 rimworld-publish 改用 Steamworks SDK 直连桌面客户端会话上传创意工坊：以 rimworld-release 产物为源，支持多语言标题/描述槽与截图库，无令牌无密码，Steam 密码不经过代理。技能内容包含 AI 辅助编写；静态检查、编译成功和游戏内验证分别记录。
 
 ## 选择 Basic 或 Image
 
@@ -188,7 +188,7 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 ## English quick start
 
-RimWorld ModDev Skill is a workflow for agents that support Agent Skills. Version **1.5.0** reworks rimworld-publish — on-demand Steam Workshop upload of release packages via the Steamworks SDK bundled with RimWorld, reusing the desktop client's logged-on session (no steamcmd, no tokens) and adding per-language title/description slots plus the screenshot gallery — on top of the existing 1.6/1.7 development, debugging, migration and batch-graphics routes. Steam passwords never pass through the agent.
+RimWorld ModDev Skill is a workflow for agents that support Agent Skills. Version **1.5.1** reworks rimworld-publish — on-demand Steam Workshop upload of release packages via the Steamworks SDK bundled with RimWorld, reusing the desktop client's logged-on session (no steamcmd, no tokens) and adding per-language title/description slots plus the screenshot gallery — on top of the existing 1.6/1.7 development, debugging, migration and batch-graphics routes. Steam passwords never pass through the agent.
 
 Choose **Basic** for supplied or reused assets, or **Image** for a workflow that includes image generation. Enable one variant only. Image generation requires an actual tool or a configured, supported provider; the skill does not supply the service.
 
