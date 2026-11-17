@@ -12,5 +12,5 @@
     "skills",
     "image"
   ],
-  "skills": "skills"
-}
+  "skills": "./skills/"
+}

@@ -37,6 +37,13 @@
 
 安装后可在 Agent 对话输入 `/rimworld-help` 或 `/rimworld-mod`，也可描述目标让代理匹配技能。[Cursor 技能文档](https://cursor.com/docs/skills)
 
+### Codex、Claude Code、ZCode 与 Antigravity
+
+- Codex：用 `codex plugin marketplace add pxy6666/Rimworld-ModDev-skill` 添加市场，再用 `codex plugin add rimworld-moddev-basic@rimworld-moddev-skill` 安装；选 Image 时把插件名换成 `rimworld-moddev-image`。
+- Claude Code：用 `/plugin marketplace add pxy6666/Rimworld-ModDev-skill` 添加市场，再以 `/plugin install rimworld-moddev-basic@rimworld-moddev-skill` 或对应 Image 名称安装。
+- ZCode：在设置的插件市场中添加本 GitHub 仓库，选一版安装；市场条目与已安装清单的版本需同步更新。
+- Antigravity：克隆仓库，从仓库根目录执行 `agy plugin validate ./basic`、`agy plugin install ./basic`、`agy plugin list --json`；选择 Image 时使用 `./image`。这里使用所选本地插件根目录。
+
 ### Codex / Cursor 手动安装
 
 克隆或下载本仓库，选择 `basic/skills/` 或 `image/skills/`，把其中**十个技能文件夹和 catalog.json 整体复制**到目标 mod 工程的 `.agents/skills/`：
@@ -63,7 +70,7 @@ YourMod/
 
 Cursor 也支持项目级 `.agents/skills/` 与 `.cursor/skills/`。两客户端在同一工程使用时可共享前者。单纯打开下载后的本仓库，不等于把技能安装进你的 mod 工程。[Cursor 技能目录](https://cursor.com/docs/skills)
 
-本仓库的插件清单是 Cursor 格式；这里的 Codex 用法是技能文件夹安装，不代表已经提供 Codex/ChatGPT 原生插件。其他平台需支持相应技能加载，并具有工程文件访问与执行能力。
+手动复制是插件市场之外的备选方式。其它平台需支持相应技能加载，并具有工程文件访问与执行能力。
 
 ## 第一次使用
 
@@ -186,7 +193,7 @@ RimWorld ModDev Skill is a workflow for agents that support Agent Skills. Versio
 
 Choose **Basic** for supplied or reused assets, or **Image** for a workflow that includes image generation. Enable one variant only. Image generation requires an actual tool or a configured, supported provider; the skill does not supply the service.
 
-For manual setup, copy all ten skill folders and catalog.json from `basic/skills/` or `image/skills/` into your mod project's `.agents/skills/`, keeping references, scripts and data. Cursor plugin users can install one variant through a supported marketplace/repository import. The manifests use Cursor's format.
+For manual setup, copy all ten skill folders and catalog.json from `basic/skills/` or `image/skills/` into your mod project's `.agents/skills/`, keeping references, scripts and data. Cursor plugin users can install one variant through a supported marketplace/repository import. Other supported clients have their own manifests and installation commands listed above.
 
 Start with `rimworld-help` or `rimworld-setup`. For development, provide your game version, project/game paths, intended player behavior, constraints, and any selected upstream mods. Choose user-controlled values, agent-decided values, or a mixed mode. The agent establishes the actual content type, verifies templates/defaults and interfaces, records a concrete plan, and obtains confirmation before implementation unless an applicable prior approval or explicit delegation already exists.
 

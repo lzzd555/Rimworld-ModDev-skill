@@ -11,5 +11,5 @@
     "mod",
     "skills"
   ],
-  "skills": "skills"
-}
+  "skills": "./skills/"
+}
