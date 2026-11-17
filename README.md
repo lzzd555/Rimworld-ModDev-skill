@@ -4,7 +4,7 @@
 
 核心顺序是：**先确认用途与真实类型，再查模板和默认值；真正未定的玩法数值与资源才交给玩家或 CLI 决定。**
 
-当前版本：**1.5.1**。支持按 1.6 / 1.7 分流制作、排错和迁移，并在重做前确认交付与验收边界。1.5.1 起 rimworld-publish 改用 Steamworks SDK 直连桌面客户端会话上传创意工坊：以 rimworld-release 产物为源，支持多语言标题/描述槽与截图库，无令牌无密码，Steam 密码不经过代理。技能内容包含 AI 辅助编写；静态检查、编译成功和游戏内验证分别记录。
+当前版本：**1.3.0**。支持按 1.6 / 1.7 分流制作、排错和迁移，并在重做前确认交付与验收边界。此次增加批量图形工作流和本机版本查证。技能内容包含 AI 辅助编写；静态检查、编译成功和游戏内验证分别记录。
 
 ## 选择 Basic 或 Image
 
@@ -13,9 +13,9 @@
 | Basic | [basic/](basic/) / `rimworld-moddev-basic` | 使用已有、外部提供或允许复用的素材，不接入平台生图流程 |
 | Image | [image/](image/) / `rimworld-moddev-image` | 需要外观需求 → 资源规格 → 生图 → 导入 PNG → 视觉检查 → 绑定引用 → 游戏验收 |
 
-两版都包含相同的十一个入口、共享需求/计划/制作/复查流程、版本资料与资源检查。Image 需要会话中实际可用的图像工具，或用户选定且可调用的外部来源；安装技能不会自动获得生图服务。
+两版都包含相同的十个入口、共享需求/计划/制作/复查流程、版本资料与资源检查。Image 需要会话中实际可用的图像工具，或用户选定且可调用的外部来源；安装技能不会自动获得生图服务。
 
-**同一工程/客户端只启用一版。** 两版技能同名，同时安装可能出现重复入口。切换时先移除或禁用旧版；手动安装须替换整套十一个技能及资源，避免残留 Image 专属文件。版本入口会引用公共资料，不能只安装一个薄入口。
+**同一工程/客户端只启用一版。** 两版技能同名，同时安装可能出现重复入口。切换时先移除或禁用旧版；手动安装须替换整套十个技能及资源，避免残留 Image 专属文件。版本入口会引用公共资料，不能只安装一个薄入口。
 
 ## 按版本选择入口
 
@@ -27,8 +27,7 @@
 | `rimworld-help` | 第一次使用、目标尚不明确，或不知道下一步 |
 | `rimworld-setup` | 检查游戏路径、编译环境、检索/MCP 和必要工具能力 |
 | `rimworld-mod` / `rimworld-debug` | 版本未定、双版本或继续使用旧名称时的路由入口 |
-| `rimworld-release` | 核对成果、依赖、资源来源并准备发行包 |
-| `rimworld-publish` | 把发行包上传或更新到 Steam 创意工坊；steamcmd 安装与登录按需进行，上传需明确授权 |
+| `rimworld-release` | 核对成果、依赖、资源来源并准备发行包；明确要求时才上传工坊 |
 
 ## 安装
 
@@ -40,7 +39,7 @@
 
 ### Codex / Cursor 手动安装
 
-克隆或下载本仓库，选择 `basic/skills/` 或 `image/skills/`，把其中**十一个技能文件夹和 catalog.json 整体复制**到目标 mod 工程的 `.agents/skills/`：
+克隆或下载本仓库，选择 `basic/skills/` 或 `image/skills/`，把其中**十个技能文件夹和 catalog.json 整体复制**到目标 mod 工程的 `.agents/skills/`：
 
 ```text
 YourMod/
@@ -55,8 +54,7 @@ YourMod/
     ├── rimworld-setup/
     ├── rimworld-mod/
     ├── rimworld-debug/
-    ├── rimworld-release/
-    └── rimworld-publish/
+    └── rimworld-release/
 ```
 
 保留各技能中的 `references/`、`scripts/` 和 `data/`；不要只复制 SKILL.md 或把 Basic/Image 两个父目录一起放进去。已有同名技能先确认来源，不直接覆盖自己的修改。
@@ -164,10 +162,6 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 每次增量完成后交付并等待新需求。要求中止某部分时保存停止位置与遗留项；再次继续时核对实际文件和证据。项目文档不替代真实实现，来源/版本变化会使相关证据失效。
 
-### 发行与工坊上传
-
-发行先由 rimworld-release 核对版本、依赖与素材许可并产出干净发行包，再由 [rimworld-publish](basic/skills/rimworld-publish/SKILL.md) 按需上传或更新 Steam 创意工坊。上传前 preflight 核对 staging 布局（About/About.xml 位于 mod 文件夹根，staging 直接为该文件夹或恰含该文件夹均可）、预览图下限 512×512 与 1MB 上限、已回写的 PublishedFileId、本机 Steamworks 库与 `public/` 页面素材；上传经 RimWorld 自带的 Steamworks 库直连桌面客户端登录会话（无需 steamcmd 与令牌），内容根为 mod 文件夹本身，并可按 `public/` 约定写入多语言标题/描述槽与截图库（快照式替换）。首次上传成功后用 adopt 把工坊物品 ID 写回 About/PublishedFileId.txt，之后同一物品走更新，inspect 按语言读回自验证。
-
 ## 工具与资源准备
 
 批量换款、多方向或需要地图图和菜单图标配套时，由资源分支进入 [GFX 专项流程](basic/skills/rimworld-mod/references/gfx-workflow.md)。记录已认可样稿与需保留的部位，再按实际消费者核对款式、方向和文件映射。分开记录工程绑定、本机同步和实机显示。Basic 可处理已有素材；Image 需要生图时沿用图像管线。两版仍从原制作入口调用，无须额外安装一个 GFX 技能。
@@ -184,20 +178,18 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 插件用户从原安装入口刷新/更新；手动用户重新下载并替换选定版本的整套技能。维护时从公共源码同步两版后一起发布，保留 Basic/Image 的资源差异。
 
-发行前仍需游戏验收。上传工坊由 rimworld-publish 在明确授权后执行，依赖桌面 Steam 客户端的登录会话（加载 RimWorld 自带的 Steamworks 库，无安装步骤、无令牌维护），Steam 密码不经过代理、不随技能分发。更改游戏启用列表或启动游戏仍需相应任务授权，不由安装技能自动执行。欢迎通过 Issues 提交问题，附客户端、游戏/上游版本、相关需求及必要的脱敏日志片段。
+发行前仍需游戏验收。上传工坊、更改游戏启用列表或启动游戏需要相应任务授权，不由安装技能自动执行。欢迎通过 Issues 提交问题，附客户端、游戏/上游版本、相关需求及必要的脱敏日志片段。
 
 ## English quick start
 
-RimWorld ModDev Skill is a workflow for agents that support Agent Skills. Version **1.5.1** reworks rimworld-publish — on-demand Steam Workshop upload of release packages via the Steamworks SDK bundled with RimWorld, reusing the desktop client's logged-on session (no steamcmd, no tokens) and adding per-language title/description slots plus the screenshot gallery — on top of the existing 1.6/1.7 development, debugging, migration and batch-graphics routes. Steam passwords never pass through the agent.
+RimWorld ModDev Skill is a workflow for agents that support Agent Skills. Version **1.3.0** adds a batch graphics workflow and local, build-aware lookups to the existing 1.6/1.7 development, debugging and migration routes.
 
 Choose **Basic** for supplied or reused assets, or **Image** for a workflow that includes image generation. Enable one variant only. Image generation requires an actual tool or a configured, supported provider; the skill does not supply the service.
 
-For manual setup, copy all eleven skill folders and catalog.json from `basic/skills/` or `image/skills/` into your mod project's `.agents/skills/`, keeping references, scripts and data. Cursor plugin users can install one variant through a supported marketplace/repository import. The manifests use Cursor's format.
+For manual setup, copy all ten skill folders and catalog.json from `basic/skills/` or `image/skills/` into your mod project's `.agents/skills/`, keeping references, scripts and data. Cursor plugin users can install one variant through a supported marketplace/repository import. The manifests use Cursor's format.
 
 Start with `rimworld-help` or `rimworld-setup`. For development, provide your game version, project/game paths, intended player behavior, constraints, and any selected upstream mods. Choose user-controlled values, agent-decided values, or a mixed mode. The agent establishes the actual content type, verifies templates/defaults and interfaces, records a concrete plan, and obtains confirmation before implementation unless an applicable prior approval or explicit delegation already exists.
 
 For migration, choose basic compatibility or improved implementation; if unspecified, the agent asks. For a rewrite, agree on technical delivery, usable target functionality, or release readiness, including relevant test cases and who supplies game-test evidence. These choices are independent; compilation is not gameplay acceptance. Independent work can be delegated to available, authorized subagents.
-
-For release, rimworld-release verifies versions, dependencies and asset licenses and produces a clean package; rimworld-publish then uploads or updates it on the Steam Workshop on explicit request, driving RimWorld's bundled Steamworks library against the logged-on desktop client. Preflight checks the staging layout (About/About.xml at the mod folder root), preview image limits (min 512×512, max 1MB), the recorded PublishedFileId, the local Steamworks library and the `public/` page-asset folder; per-language title/description slots and the screenshot gallery are written from `public/`, and a first successful upload writes the item id back into About/PublishedFileId.txt for later updates. Steam passwords never pass through the agent.
 
 Project records support incremental additions and resuming work. Evidence is reused only while its source and conditions remain valid. Selected exact-build catalogs and query scripts are included; game code, decompiled bodies, project build tools, raw local databases and credentials are excluded. Static checks and compilation do not replace in-game acceptance.

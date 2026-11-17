@@ -10,7 +10,7 @@ description: 引导首次接触 RimWorld mod 工具链的用户开始工作，�
 - 用户只说想做 mod：询问最关键的玩法/修改目标，同时检查现有工程与环境，不先要求用户懂 Def、Harmony 或级别。
 - 用户要首次配置、缺命令、连接不上工具：进入 rimworld-setup 的环境流程；该技能不可发现时读当前版本相邻的 [环境技能](../rimworld-setup/SKILL.md)。
 - 目标已明确：进入 rimworld-mod 的用途/类型分析、契约与具体计划确认；沿用已有同意，不要求再选技能或重复点“开始”。模糊目标按 [制作循环](../rimworld-mod/references/workflow.md) 给玩法关键选项，真正未定数值/资源再按制作模式处理；六种范围由目标与证据判断。
-- 有错误或不符合预期：按 rimworld-debug 定位；要准备发行包则按 rimworld-release，要上传或更新创意工坊则按 rimworld-publish。
+- 有错误或不符合预期：按 rimworld-debug 定位。要准备发行包用 [发行准备](../rimworld-release/SKILL.md)；明确要上传或更新 Steam 创意工坊时用 [工坊发布](../rimworld-publish/SKILL.md)，先核对本地产物与发布计划。
 - 明确 1.6/1.7 时优先相应 rimworld-16/17-mod 或 debug；版本未定/双版本走通用路由。给已有 1.6 工程增加 1.7 时用 [迁移入口](../rimworld-17-migrate/SKILL.md)，先区分基本可玩或改进实现。菜单/地图能进但功能触发后报错或失效，走 [地图后诊断](../rimworld-debug/references/post-map-debug.md)，不只判断能否启动。
 - 已有工作记录：按 [续作入口](../rimworld-mod/references/project-state.md) 判断继续/添加/调整/停止，核对文件与证据，恢复模式、确认与下一动作；只读相关部分，不每次重查。避免覆盖独立 mod 或套用示例身份。
 - 用户问需要提交什么：按当前目标给必要资源清单，读取 [资源分支](../rimworld-mod/references/assets.md)；区分已有素材、可起草文本、可复用和真正缺失，不让用户先猜尺寸、图形类或翻译键。只涉及补丁或数值时不要求整套美术资料。

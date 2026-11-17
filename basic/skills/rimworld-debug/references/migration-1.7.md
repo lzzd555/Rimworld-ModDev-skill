@@ -47,16 +47,6 @@ python <当前技能>/scripts/compatibility.py table
 
 无源码、关键上游未兼容或缺能力时标阻塞/可接受的降级选择；不装作存在等价新 API。旧 DLL 先检查实际功能，确需重编才修改构建；保留 1.6 时隔离输出，不能让 net10.0 产物覆盖旧目录。
 
-## Harmony 3 补丁语义（2026-11 实测于 1.7.5005 + Harmony 3.0）
-
-RimWorld 1.7 搭载 Harmony 3，与 Harmony 2 的三处行为差异会直接造成"补丁装了一半"式静默失效：
-
-1. **所有补丁（含 postfix）按优先级降序执行**。Harmony 2 的"postfix 升序、越低越后跑"不再成立；且常量表已变：`Priority.Last == 0`、`First == 800`（Harmony 2 为 -800/800）。要让自己的 postfix 晚于上游 `[HarmonyPriority(0)]`（即 Last）运行，需显式更小的值（如 `-1`），不能沿用 Normal(400)。
-2. **PatchAll 遇到第一个失败补丁类即整体中断**：排在失败类之后的补丁全部未安装，游戏侧仅有一条 `Error while instantiating a mod`（mod 仍正常加载）。症状是"部分功能生效、部分静默失效"——不要因为某个补丁工作了就认为 PatchAll 完整。
-3. **补丁方法载荷参数默认按名绑定**，上游方法参数改名（跨小版本常见，如 `pawn`/`selPawn`）会报 `Parameter "x" not found` 并触发上一条的中断；目标方法有重载时不指定 `new[]{ typeof(...) }` 会报 AmbiguousMatchException。稳妥写法：`[HarmonyPatch(typeof(X), "Method", new[]{ typeof(Pawn) })]` + 载荷参数用 `[HarmonyArgument(0)]` 按位置绑定。
-
-排错入口：会话日志查 `Error while instantiating a mod`，按补丁类声明顺序判断哪些补丁实际装上；修复后必须整类复核，不以"先前正常的那部分"作证据。
-
 ## 进入地图后仍须功能验收
 
 菜单、创建 Game、进地图、触发功能、连续运行、切图/读档是不同状态。按 [post-map-debug.md](post-map-debug.md) 查循环报错和静默失效；功能链未触发不算通过，缺游戏证据留下具体复现步骤。
