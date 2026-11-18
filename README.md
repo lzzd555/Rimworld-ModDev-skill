@@ -4,7 +4,7 @@
 
 核心顺序是：**先确认用途与真实类型，再查模板和默认值；真正未定的玩法数值与资源才交给玩家或 CLI 决定。**
 
-当前版本：**1.3.0**。支持按 1.6 / 1.7 分流制作、排错和迁移，并在重做前确认交付与验收边界。此次增加批量图形工作流和本机版本查证。技能内容包含 AI 辅助编写；静态检查、编译成功和游戏内验证分别记录。
+当前版本为 **1.5.1**。支持按 1.6 / 1.7 分流制作、排错和迁移。发行可交给工坊发布技能，按已验收的发行目录和确认过的页面更新计划上传。技能内容包含 AI 辅助编写；静态检查、编译、游戏内验证和上传结果分别记录。
 
 ## 选择 Basic 或 Image
 
@@ -13,9 +13,9 @@
 | Basic | [basic/](basic/) / `rimworld-moddev-basic` | 使用已有、外部提供或允许复用的素材，不接入平台生图流程 |
 | Image | [image/](image/) / `rimworld-moddev-image` | 需要外观需求 → 资源规格 → 生图 → 导入 PNG → 视觉检查 → 绑定引用 → 游戏验收 |
 
-两版都包含相同的十个入口、共享需求/计划/制作/复查流程、版本资料与资源检查。Image 需要会话中实际可用的图像工具，或用户选定且可调用的外部来源；安装技能不会自动获得生图服务。
+两版都包含相同的 11 个入口、共享需求/计划/制作/复查流程、版本资料与资源检查。Image 的生图流程需要会话中实际可用的图像工具，或用户选定且可调用的外部来源。
 
-**同一工程/客户端只启用一版。** 两版技能同名，同时安装可能出现重复入口。切换时先移除或禁用旧版；手动安装须替换整套十个技能及资源，避免残留 Image 专属文件。版本入口会引用公共资料，不能只安装一个薄入口。
+**同一工程/客户端只启用一版。** 两版技能同名，同时安装可能出现重复入口。切换时先移除或禁用旧版；手动安装须替换整套技能及资源。版本入口会引用公共资料。
 
 ## 按版本选择入口
 
@@ -27,7 +27,8 @@
 | `rimworld-help` | 第一次使用、目标尚不明确，或不知道下一步 |
 | `rimworld-setup` | 检查游戏路径、编译环境、检索/MCP 和必要工具能力 |
 | `rimworld-mod` / `rimworld-debug` | 版本未定、双版本或继续使用旧名称时的路由入口 |
-| `rimworld-release` | 核对成果、依赖、资源来源并准备发行包；明确要求时才上传工坊 |
+| `rimworld-release` | 核对成果、依赖与资源来源，生成本地发行目录、清单和收据 |
+| `rimworld-publish` | 用户授权后将经核验的发行目录上传到 Steam 工坊；可用同一记录续传 |
 
 ## 安装
 
@@ -46,7 +47,7 @@
 
 ### Codex / Cursor 手动安装
 
-克隆或下载本仓库，选择 `basic/skills/` 或 `image/skills/`，把其中**十个技能文件夹和 catalog.json 整体复制**到目标 mod 工程的 `.agents/skills/`：
+克隆或下载本仓库，选择 `basic/skills/` 或 `image/skills/`，把其中**所有技能文件夹和 catalog.json 整体复制**到目标 mod 工程的 `.agents/skills/`：
 
 ```text
 YourMod/
@@ -61,7 +62,8 @@ YourMod/
     ├── rimworld-setup/
     ├── rimworld-mod/
     ├── rimworld-debug/
-    └── rimworld-release/
+    ├── rimworld-release/
+    └── rimworld-publish/
 ```
 
 保留各技能中的 `references/`、`scripts/` 和 `data/`；不要只复制 SKILL.md 或把 Basic/Image 两个父目录一起放进去。已有同名技能先确认来源，不直接覆盖自己的修改。
@@ -179,7 +181,13 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 需要查当前安装时，按 [本地批量查证](basic/skills/rimworld-mod/references/local-lookup.md) 查询 Def、父模板、类型、成员和静态引用。XML 查询只需 Python；首次构建 DLL 索引才需可用 .NET SDK，需要方法体时才按构建缓存反编译结果。缓存保存在本机。精选 `catalog.py` 仍可用于已记录的构建基线，迁移方向由 `compatibility.py` 查询。查不到不等于接口删除，静态资料不代替游戏实测。
 
-**此仓库分发技能、查询脚本与必要精选资料，不含游戏文件、反编译正文、编译器、工程 CLI、原始研究报告/统计数据库、日志、本机配置或密钥。** 提到的工程 `tools/preflight.ps1`、`tools/mod.ps1`、统计查询或资源导入助手，只有目标工程实际提供时才使用；没有就采用真实可用的查询、构建和文件工具，不运行缺失脚本。
+此仓库分发技能、查询脚本、精选资料和发行打包器。提到的工程 `tools/preflight.ps1`、`tools/mod.ps1`、统计查询或资源导入助手，只有目标工程实际提供时才使用。
+
+## 发行与 Steam 工坊
+
+先用 [rimworld-release](basic/skills/rimworld-release/SKILL.md) 核对游戏验收记录并打包。项目没有配套打包器时，从本仓库完整 checkout，以 Python 3.11+ 运行 `python <checkout>/tools/mod_cli.py package --root <Mod工程根> --target 1.7`，目标为 1.6 时替换参数。它会在工程下生成发行目录、文件哈希和发行收据。
+
+使用 [rimworld-publish](basic/skills/rimworld-publish/SKILL.md) 离线制定计划，核对具体发行目录及其验收记录、目标物品和明确选定的页面改动。更新默认只提交 Mod 内容；已存在的页面字段按用户明确选择修改。确认计划并授权后，使用已登录的 Windows Steam 桌面客户端上传。保留本地 journal 以续传；结果未知时先查证再继续。[上传与恢复](basic/skills/rimworld-publish/references/upload.md)
 
 ## 更新与反馈
 
@@ -189,14 +197,16 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 ## English quick start
 
-RimWorld ModDev Skill is a workflow for agents that support Agent Skills. Version **1.3.0** adds a batch graphics workflow and local, build-aware lookups to the existing 1.6/1.7 development, debugging and migration routes.
+RimWorld ModDev Skill covers mod development, debugging, migration and release for RimWorld 1.6 and 1.7. Version **1.5.1** adds a resumable Steam Workshop workflow for reviewed release directories.
 
 Choose **Basic** for supplied or reused assets, or **Image** for a workflow that includes image generation. Enable one variant only. Image generation requires an actual tool or a configured, supported provider; the skill does not supply the service.
 
-For manual setup, copy all ten skill folders and catalog.json from `basic/skills/` or `image/skills/` into your mod project's `.agents/skills/`, keeping references, scripts and data. Cursor plugin users can install one variant through a supported marketplace/repository import. Other supported clients have their own manifests and installation commands listed above.
+For manual setup, copy all skill folders and catalog.json from `basic/skills/` or `image/skills/` into your mod project's `.agents/skills/`, keeping references, scripts and data. Use the installation commands above for the supported plugin clients.
 
 Start with `rimworld-help` or `rimworld-setup`. For development, provide your game version, project/game paths, intended player behavior, constraints, and any selected upstream mods. Choose user-controlled values, agent-decided values, or a mixed mode. The agent establishes the actual content type, verifies templates/defaults and interfaces, records a concrete plan, and obtains confirmation before implementation unless an applicable prior approval or explicit delegation already exists.
 
 For migration, choose basic compatibility or improved implementation; if unspecified, the agent asks. For a rewrite, agree on technical delivery, usable target functionality, or release readiness, including relevant test cases and who supplies game-test evidence. These choices are independent; compilation is not gameplay acceptance. Independent work can be delegated to available, authorized subagents.
 
-Project records support incremental additions and resuming work. Evidence is reused only while its source and conditions remain valid. Selected exact-build catalogs and query scripts are included; game code, decompiled bodies, project build tools, raw local databases and credentials are excluded. Static checks and compilation do not replace in-game acceptance.
+Project records support incremental additions and resuming work. Evidence is reused only while its source and conditions remain valid. The repository includes selected build catalogs, query scripts and a release packager.
+
+For Workshop publishing, prepare a checked release directory with `rimworld-release`. Use `rimworld-publish` to plan and authorize an upload of that exact directory. Existing page fields are changed only when selected explicitly. Upload uses the Windows Steam desktop session. Keep the journal to resume a failed attempt, and verify ambiguous outcomes before retrying. [Upload and recovery](basic/skills/rimworld-publish/references/upload.md)
