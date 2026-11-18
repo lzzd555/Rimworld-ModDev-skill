@@ -4,7 +4,7 @@
 
 核心顺序是：**先确认用途与真实类型，再查模板和默认值；真正未定的玩法数值与资源才交给玩家或 CLI 决定。**
 
-当前版本为 **1.5.1**。支持按 1.6 / 1.7 分流制作、排错和迁移。发行可交给工坊发布技能，按已验收的发行目录和确认过的页面更新计划上传。技能内容包含 AI 辅助编写；静态检查、编译、游戏内验证和上传结果分别记录。
+当前版本为 **1.5.2**。支持按 1.6 / 1.7 分流制作、排错和迁移。发行可交给工坊发布技能，按已验收的发行目录和确认过的页面更新计划上传；超 1MB 的主图/截图自动压缩同一张图，并可按 About.xml 依赖在描述末尾生成前置段。技能内容包含 AI 辅助编写；静态检查、编译、游戏内验证和上传结果分别记录。
 
 ## 选择 Basic 或 Image
 
@@ -187,7 +187,7 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 先用 [rimworld-release](basic/skills/rimworld-release/SKILL.md) 核对游戏验收记录并打包。项目没有配套打包器时，从本仓库完整 checkout，以 Python 3.11+ 运行 `python <checkout>/tools/mod_cli.py package --root <Mod工程根> --target 1.7`，目标为 1.6 时替换参数。它会在工程下生成发行目录、文件哈希和发行收据。
 
-使用 [rimworld-publish](basic/skills/rimworld-publish/SKILL.md) 离线制定计划，核对具体发行目录及其验收记录、目标物品和明确选定的页面改动。更新默认只提交 Mod 内容；已存在的页面字段按用户明确选择修改。确认计划并授权后，使用已登录的 Windows Steam 桌面客户端上传。保留本地 journal 以续传；结果未知时先查证再继续。[上传与恢复](basic/skills/rimworld-publish/references/upload.md)
+使用 [rimworld-publish](basic/skills/rimworld-publish/SKILL.md) 离线制定计划，核对具体发行目录及其验收记录、目标物品和明确选定的页面改动。更新默认只提交 Mod 内容；已存在的页面字段按用户明确选择修改。主图或截图超过 1MB 时自动压缩同一张图（主图 PNG、截图 JPEG，需 Pillow）；`--append-requirements` 按 About.xml 的 modDependencies/loadAfter 自动追加含 DLC 标注与工坊链接的前置段。确认计划并授权后，使用已登录的 Windows Steam 桌面客户端上传。保留本地 journal 以续传；结果未知时先查证再继续。[上传与恢复](basic/skills/rimworld-publish/references/upload.md)
 
 ## 更新与反馈
 
@@ -197,7 +197,7 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 ## English quick start
 
-RimWorld ModDev Skill covers mod development, debugging, migration and release for RimWorld 1.6 and 1.7. Version **1.5.1** adds a resumable Steam Workshop workflow for reviewed release directories.
+RimWorld ModDev Skill covers mod development, debugging, migration and release for RimWorld 1.6 and 1.7. Version **1.5.2** adds a resumable Steam Workshop workflow for reviewed release directories, automatic sub-1MB re-encoding of oversized previews and screenshots, and an About.xml-derived requirements section for Workshop descriptions.
 
 Choose **Basic** for supplied or reused assets, or **Image** for a workflow that includes image generation. Enable one variant only. Image generation requires an actual tool or a configured, supported provider; the skill does not supply the service.
 
@@ -209,4 +209,4 @@ For migration, choose basic compatibility or improved implementation; if unspeci
 
 Project records support incremental additions and resuming work. Evidence is reused only while its source and conditions remain valid. The repository includes selected build catalogs, query scripts and a release packager.
 
-For Workshop publishing, prepare a checked release directory with `rimworld-release`. Use `rimworld-publish` to plan and authorize an upload of that exact directory. Existing page fields are changed only when selected explicitly. Upload uses the Windows Steam desktop session. Keep the journal to resume a failed attempt, and verify ambiguous outcomes before retrying. [Upload and recovery](basic/skills/rimworld-publish/references/upload.md)
+For Workshop publishing, prepare a checked release directory with `rimworld-release`. Use `rimworld-publish` to plan and authorize an upload of that exact directory. Existing page fields are changed only when selected explicitly. Oversized previews and screenshots are re-encoded under the 1MB limit without substituting different art, and `--append-requirements` appends an About.xml-derived requirements section (DLC tags, Workshop links) to the selected descriptions. Upload uses the Windows Steam desktop session. Keep the journal to resume a failed attempt, and verify ambiguous outcomes before retrying. [Upload and recovery](basic/skills/rimworld-publish/references/upload.md)

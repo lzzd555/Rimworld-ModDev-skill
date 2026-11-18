@@ -10,6 +10,7 @@ import threading
 import time
 from contextlib import contextmanager, ExitStack
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 APPID = 294100
 DEFAULT_RUN_DIR = Path.home() / '.rimworld-publish' / 'steamworks'
@@ -99,6 +100,31 @@ def find_dylib(override=None):
             if path.is_file():
                 return path.resolve()
     return None
+
+
+def workshop_package_index(app_id=APPID):
+    """Map installed Workshop content packageIds to (item_id, name) for dependency links."""
+    index = {}
+    for root in _steam_library_roots(platform.system()):
+        content = root / 'steamapps' / 'workshop' / 'content' / str(app_id)
+        try:
+            items = sorted(content.iterdir())
+        except OSError:
+            continue
+        for item in items:
+            if not item.name.isdigit():
+                continue
+            try:
+                metadata = ET.fromstring((item / 'About' / 'About.xml').read_bytes())
+            except (OSError, ET.ParseError):
+                continue
+            # The first packageId is the item's own identity; later ones belong to its dependencies.
+            package = next((node.text or '' for node in metadata.findall('packageId')), '').strip()
+            if not package:
+                continue
+            name = (metadata.findtext('name') or '').strip()
+            index.setdefault(package.casefold(), (int(item.name), name))
+    return index
 
 
 def sdk_profile():

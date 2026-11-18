@@ -15,12 +15,23 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from xml.etree import ElementTree
 
 from release_contract import ReleaseContractError, verify_release
-from steam_backend import APPID, DEFAULT_RUN_DIR, SteamworksError, SteamworksUGC, find_dylib, parse_file_id
+from steam_backend import (APPID, DEFAULT_RUN_DIR, SteamworksError, SteamworksUGC, find_dylib,
+                           parse_file_id, workshop_package_index)
 
 
 VISIBILITY = {"public": 0, "friends-only": 1, "private": 2, "unlisted": 3}
 WORKSHOP_URL = "https://steamcommunity.com/sharedfiles/filedetails/?id={}"
 RELEASE_ERROR = (ReleaseContractError, OSError, ValueError, SteamworksError, ElementTree.ParseError)
+# Steam rejects every uploaded preview/screenshot at this size (EResult 9/LimitExceeded).
+IMAGE_BYTE_LIMIT = 1_000_000
+DLC_NAMES = {
+    "ludeon.rimworld": "RimWorld",
+    "ludeon.rimworld.royalty": "RimWorld - Royalty",
+    "ludeon.rimworld.ideology": "RimWorld - Ideology",
+    "ludeon.rimworld.biotech": "RimWorld - Biotech",
+    "ludeon.rimworld.anomaly": "RimWorld - Anomaly",
+    "ludeon.rimworld.odyssey": "RimWorld - Odyssey",
+}
 
 
 class PublishError(ValueError):
@@ -103,14 +114,68 @@ def image_size(path):
     return None
 
 
-def record_image(path, main):
+def compress_image(source, main, assets, label):
+    """Re-encode this exact picture under the Workshop limit; never substitute different art."""
+    try:
+        from PIL import Image
+    except ImportError as error:
+        raise PublishError(f"{source.name} is over the 1 MB Workshop limit. Install Pillow "
+                           f"(python -m pip install pillow) to compress it automatically, or supply "
+                           f"a smaller PNG/JPEG.") from error
+    with Image.open(source) as picture:
+        picture.load()
+        assets.mkdir(parents=True, exist_ok=True)
+        alpha = picture.mode in ("RGBA", "LA", "PA") or "transparency" in picture.info
+        width, height = picture.size
+        ladder = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
+        if main and min(width, height) > 0:
+            # The main preview must stay at or above 512x512 at every step.
+            floor = 512 / min(width, height)
+            ladder = [scale for scale in ladder if scale >= floor] or [min(floor, 1.0)]
+        # Steam silently drops some JPEG main previews; keep the main preview PNG. Screenshots
+        # upload reliably as JPEG, which also compresses photographic content far below 1 MB.
+        encodings = [("png", {})] if main else [("jpg", {"quality": 90, "optimize": True}),
+                                                ("jpg", {"quality": 70, "optimize": True}),
+                                                ("jpg", {"quality": 50, "optimize": True})]
+        for scale in ladder:
+            frame = picture if scale == 1.0 else picture.resize(
+                (max(1, round(width * scale)), max(1, round(height * scale))), Image.LANCZOS)
+            base = frame.convert("RGBA" if alpha else "RGB") if main else frame.convert("RGB")
+            for suffix, options in encodings:
+                candidate = assets / f"{label}.{suffix}"
+                base.save(candidate, format="PNG" if suffix == "png" else "JPEG", **options)
+                if candidate.stat().st_size < IMAGE_BYTE_LIMIT:
+                    return {"path": str(candidate), "sha256": content_hash(candidate),
+                            "compressedFrom": str(source), "sourceBytes": source.stat().st_size,
+                            "bytes": candidate.stat().st_size}
+            if main:
+                # Last resort for a preview that resists lossless PNG: 256-color quantization.
+                candidate = assets / f"{label}.png"
+                base.quantize(colors=256, method=Image.MEDIANCUT, dither=Image.FLOYDSTEINBERG).save(
+                    candidate, format="PNG", optimize=True)
+                if candidate.stat().st_size < IMAGE_BYTE_LIMIT:
+                    return {"path": str(candidate), "sha256": content_hash(candidate),
+                            "compressedFrom": str(source), "sourceBytes": source.stat().st_size,
+                            "bytes": candidate.stat().st_size, "quantized": True}
+    raise PublishError(f"{source.name} could not be compressed under 1 MB"
+                       + (" while keeping 512x512" if main else "")
+                       + f". Supply a smaller{' PNG preview' if main else ' image'}: {source}")
+
+
+def record_image(path, main, assets=None, label="image"):
     path = path.resolve(strict=True)
-    if path.suffix.lower() not in {".png", ".jpg", ".jpeg"} or path.stat().st_size >= 1_000_000:
-        raise PublishError(f"Choose a PNG or JPEG image under 1 MB: {path}")
-    dimensions = image_size(path)
+    if path.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
+        raise PublishError(f"Choose a PNG or JPEG image: {path}")
+    if path.stat().st_size >= IMAGE_BYTE_LIMIT:
+        if assets is None:
+            raise PublishError(f"Choose a PNG or JPEG image under 1 MB: {path}")
+        record = compress_image(path, main, assets, label)
+    else:
+        record = {"path": str(path), "sha256": content_hash(path)}
+    dimensions = image_size(Path(record["path"]))
     if not dimensions or min(dimensions) <= 0 or (main and min(dimensions) < 512):
         raise PublishError(f"Invalid image dimensions (main preview requires 512 by 512 or larger): {path}")
-    return {"path": str(path), "sha256": content_hash(path)}
+    return record
 
 
 def page_text(field, value):
@@ -139,6 +204,74 @@ def project_item(project, wanted_package):
     return parse_file_id(marker.read_text(encoding="utf-8-sig").strip()) if marker.exists() else None
 
 
+def workshop_id_from_url(url):
+    match = re.search(r"[?&]id=([0-9]{1,20})", url or "")
+    return int(match.group(1)) if match else None
+
+
+def release_requirements(release):
+    """Collect the dependencies the verified About.xml declares, enriched with Workshop links."""
+    root = ElementTree.parse(release.content / "About" / "About.xml").getroot()
+    entries, seen = [], {}
+
+    def add(package, name, url, required):
+        key = package.casefold()
+        if not package:
+            return
+        if key in seen:
+            seen[key]["required"] = seen[key]["required"] or required
+            return
+        entry = {"packageId": package, "name": name or package,
+                 "itemId": workshop_id_from_url(url), "dlc": key in DLC_NAMES, "required": required}
+        seen[key] = entry
+        entries.append(entry)
+
+    for item in root.findall("modDependencies/li"):
+        add((item.findtext("packageId") or "").strip(), (item.findtext("name") or "").strip(),
+             (item.findtext("steamWorkshopUrl") or "").strip(), True)
+    for item in root.findall("loadAfter/li"):
+        add((item.findtext("packageId") or "").strip(), (item.findtext("name") or "").strip(), "", False)
+    if any(entry["itemId"] is None and not entry["dlc"] for entry in entries):
+        installed = workshop_package_index()
+        for entry in entries:
+            if entry["itemId"] is None and not entry["dlc"]:
+                found = installed.get(entry["packageId"].casefold())
+                if found:
+                    entry["itemId"] = found[0]
+                    if entry["name"] == entry["packageId"] and found[1]:
+                        entry["name"] = found[1]
+    return entries
+
+
+def requirements_section(entries, language):
+    """Render the About.xml dependencies as a BBCode block for one Steam language slot."""
+    chinese = language in ("schinese", "tchinese")
+
+    def line(entry):
+        name = DLC_NAMES.get(entry["packageId"].casefold(), entry["name"]) if entry["dlc"] else entry["name"]
+        text = f"[url={WORKSHOP_URL.format(entry['itemId'])}]{name}[/url]" if entry["itemId"] else name
+        if entry["dlc"]:
+            text += "（DLC）" if chinese else " (DLC)"
+        elif not entry["itemId"]:
+            text += f" ({entry['packageId']})"
+        return f"[*]{text}"
+
+    required = [entry for entry in entries if entry["required"]]
+    ordered = [entry for entry in entries if not entry["required"]]
+    blocks = []
+    if required:
+        blocks.append("[b]" + ("必需" if chinese else "Required") + "[/b]")
+        blocks += ["[list]", *[line(entry) for entry in required], "[/list]"]
+    if ordered:
+        blocks.append("[b]" + ("加载顺序（非必需）" if chinese else "Load order (optional)") + "[/b]")
+        blocks += ["[list]", *[line(entry) for entry in ordered], "[/list]"]
+    return "\n".join(blocks)
+
+
+def append_requirements(text, section):
+    return text.rstrip() + "\n\n" + section if section else text
+
+
 def plan(args):
     release = verify_release(args.content)
     journal = args.journal.resolve()
@@ -155,24 +288,29 @@ def plan(args):
     if args.create and (args.title is None or args.preview is None):
         raise PublishError("A new item requires an explicit title and main preview.")
 
+    primary_language = "english" if args.language is None else language_code(args.language)
+    requirements = release_requirements(release) if args.append_requirements else None
+    primary_section = requirements_section(requirements, primary_language) if requirements is not None else ""
+    assets = journal.parent / (journal.name + ".assets")
     fields = {}
     if args.title is not None:
         fields["title"] = page_text("title", args.title)
     if args.description_file is not None:
-        fields["description"] = page_text("description", args.description_file.read_text(encoding="utf-8-sig"))
+        fields["description"] = page_text(
+            "description", append_requirements(args.description_file.read_text(encoding="utf-8-sig"), primary_section))
     if args.language is not None:
         if not fields:
             raise PublishError("--language requires a title or description update.")
-        fields["language"] = language_code(args.language)
-    primary_language = fields.get("language", "english") if fields else None
+        fields["language"] = primary_language
     if args.preview is not None:
-        fields["preview"] = record_image(args.preview, main=True)
+        fields["preview"] = record_image(args.preview, main=True, assets=assets, label="preview")
     if args.visibility or args.create:
         fields["visibility"] = args.visibility or "private"
     if args.replace_screenshots is not None:
         if len(args.replace_screenshots) > 20:
             raise PublishError("Supply up to 20 replacement screenshots.")
-        fields["screenshots"] = [record_image(path, main=False) for path in args.replace_screenshots]
+        fields["screenshots"] = [record_image(path, main=False, assets=assets, label=f"screenshot-{index}")
+                                 for index, path in enumerate(args.replace_screenshots)]
     if "\0" in args.changelog:
         raise PublishError("Change note must contain no NUL.")
 
@@ -190,12 +328,18 @@ def plan(args):
         entry = read_json(Path(filename))
         if not isinstance(entry, dict) or not entry or entry.keys() - {"title", "description"}:
             raise PublishError("A locale file must contain title and/or description only.")
+        if requirements is not None and "description" in entry:
+            entry["description"] = append_requirements(entry["description"], requirements_section(requirements, code))
         translated = {key: page_text(key, value) for key, value in entry.items()}
         steps.append({"operation": "locale", "state": "pending", "fields": {"language": code, **translated}})
+    if args.append_requirements and "description" not in fields and not any(
+            "description" in step["fields"] for step in steps if step["operation"] == "locale"):
+        raise PublishError("--append-requirements requires a description update.")
     state = {
         "schema": 1, "appId": APPID, "packageId": release.package_id, "content": str(release.content),
         "contentDigest": release.digest, "acceptance": args.acceptance, "changelog": args.changelog,
-        "itemId": next(iter(ids), None), "accountId": None, "needsAgreement": False, "steps": steps
+        "itemId": next(iter(ids), None), "accountId": None, "needsAgreement": False,
+        "requirements": {"entries": requirements} if requirements is not None else None, "steps": steps
     }
     with lock(journal):
         if journal.exists():
@@ -404,6 +548,7 @@ def main(argv=None):
             command.add_argument("--language")
             command.add_argument("--changelog", default="")
             command.add_argument("--locale", action="append", default=[])
+            command.add_argument("--append-requirements", action="store_true")
             command.add_argument("--replace-screenshots", nargs="*", type=Path)
         if name == "upload":
             command.add_argument("--sdk", type=Path)

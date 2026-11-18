@@ -19,7 +19,7 @@ python -X utf8 <技能目录>/scripts/publish.py plan --content <已核验Mod目
 
 ## 页面写入范围
 
-更新总是提交已核验的 Mod 内容。以下输入仅在用户选择时纳入计划；未选择的既有页面字段保持原样。不会从工程素材文件夹或 `About` 自动推导页面变更。
+更新总是提交已核验的 Mod 内容。以下输入仅在用户选择时纳入计划；未选择的既有页面字段保持原样。除 `--append-requirements` 按 About.xml 依赖生成的前置段外，不会从工程素材文件夹或 `About` 自动推导页面变更。
 
 | 变更 | 计划参数与边界 |
 | --- | --- |
@@ -28,6 +28,9 @@ python -X utf8 <技能目录>/scripts/publish.py plan --content <已核验Mod目
 | 本次变更说明 | `--changelog`；仅用于本次提交，不代替页面描述 |
 | 其它语言槽 | 重复 `--locale LANGUAGE=FILE`；每个文件为 UTF-8 JSON，只能含 `title` 和/或 `description`；未声明的语言和字段保留 |
 | 图片库 | `--replace-screenshots <图片路径 ...>` 明确替换图片；只写标记、不带路径明确清空图片。保留不属图片的预览内容；未指定不触碰图片库 |
+| 前置段 | `--append-requirements`；从已核验包 `About/About.xml` 的 `modDependencies`/`loadAfter` 生成"必需/加载顺序"两段，追加到本次写入的每个语言槽描述末尾。DLC 标注官方名；模组链接优先依赖声明的 `steamWorkshopUrl`，缺失时按本机已安装工坊内容反查 packageId，仍无法解析的只显示名称和 packageId |
+
+主图或截图超过 1MB 时自动压缩**同一张图**（不替换内容）：主图重编码为 PNG、必要时逐步缩小但保持 512×512 以上（PNG 仍超限时最后尝试 256 色量化），截图重编码为 JPEG 并逐级降低质量；压缩副本保存在 journal 同级的 `<journal 名>.assets/` 目录并计入哈希校验。自动压缩需要 Pillow（`python -m pip install pillow`），未安装时明确报错，由用户提供小于 1MB 的图。
 
 计划要明确区分主图与附加截图。替换、清空、公开或其它会改变页面效果的选项不从本地空目录或缺素材推断。新建成功记录 journal 返回的真实 ID；用户同意保存标记后才更新工程 `About/PublishedFileId.txt` 并重新打包。Steam 提示须接受工坊协议时，请用户在 Steam 处理并核对可见性；转公开是独立选择。
 
