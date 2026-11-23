@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "rimworld-moddev",
-      "source": "./rimworld-moddev",
+      "source": "./",
       "version": "2.0.0",
       "description": "RimWorld mod 开发、调试、发行与独立 rimworld-art 美术技能。",
       "keywords": ["rimworld", "mod", "skills", "art"]

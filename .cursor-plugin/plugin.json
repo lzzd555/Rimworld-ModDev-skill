@@ -11,5 +11,6 @@
     "mod",
     "skills",
     "art"
-  ]
+  ],
+  "skills": "./skills/"
 }

@@ -1,12 +1,15 @@
 import importlib.util
 import json
 import re
+import shutil
+import tempfile
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PACKAGE = ROOT / "rimworld-moddev"
+PACKAGE = ROOT
+SKILLS = ROOT / "skills"
 MARKETPLACES = (
     ROOT / "marketplace.json",
     ROOT / ".agents/plugins/marketplace.json",
@@ -14,12 +17,11 @@ MARKETPLACES = (
     ROOT / ".cursor-plugin/marketplace.json",
 )
 PLATFORM_MANIFESTS = (
-    PACKAGE / "plugin.json",
-    PACKAGE / ".antigravity-plugin/plugin.json",
-    PACKAGE / ".claude-plugin/plugin.json",
-    PACKAGE / ".codex-plugin/plugin.json",
-    PACKAGE / ".cursor-plugin/plugin.json",
-    PACKAGE / ".zcode-plugin/plugin.json",
+    ROOT / ".antigravity-plugin/plugin.json",
+    ROOT / ".claude-plugin/plugin.json",
+    ROOT / ".codex-plugin/plugin.json",
+    ROOT / ".cursor-plugin/plugin.json",
+    ROOT / ".zcode-plugin/plugin.json",
 )
 
 
@@ -30,7 +32,7 @@ def read_json(path):
 
 def source_path(source):
     if isinstance(source, dict):
-        return source["path"]
+        return source.get("path", source.get("url"))
     return source
 
 
@@ -41,7 +43,7 @@ class PluginStructureTest(unittest.TestCase):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
-        skills = ROOT / "rimworld-moddev/skills"
+        skills = SKILLS
         self.assertEqual(skills, module.bundled_skills())
         self.assertTrue(
             (skills / "rimworld-debug/scripts/content_load.py").is_file()
@@ -50,8 +52,28 @@ class PluginStructureTest(unittest.TestCase):
             (skills / "rimworld-mod/scripts/source_cache.py").is_file()
         )
 
+    def test_cli_reports_missing_bundled_skills(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            tools = root / "tools"
+            tools.mkdir()
+            module_path = tools / "mod_cli.py"
+            shutil.copy2(ROOT / "tools/mod_cli.py", module_path)
+
+            spec = importlib.util.spec_from_file_location(
+                "isolated_mod_cli", module_path
+            )
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            with self.assertRaisesRegex(
+                FileNotFoundError, "Bundled skills catalog missing"
+            ):
+                module.bundled_skills()
+
     def test_only_canonical_package_exists(self):
-        self.assertTrue(PACKAGE.is_dir())
+        self.assertFalse((ROOT / "rimworld-moddev").exists())
+        self.assertTrue(SKILLS.is_dir())
         self.assertFalse((ROOT / "basic").exists())
         self.assertFalse((ROOT / "image").exists())
 
@@ -61,10 +83,7 @@ class PluginStructureTest(unittest.TestCase):
                 plugins = read_json(path)["plugins"]
                 self.assertEqual(1, len(plugins))
                 self.assertEqual("rimworld-moddev", plugins[0]["name"])
-                self.assertEqual(
-                    "rimworld-moddev",
-                    source_path(plugins[0]["source"]).removeprefix("./"),
-                )
+                self.assertIn(source_path(plugins[0]["source"]), (".", "./"))
 
     def test_platform_manifests_use_unified_identity(self):
         for path in PLATFORM_MANIFESTS:
@@ -73,12 +92,19 @@ class PluginStructureTest(unittest.TestCase):
                 self.assertEqual("rimworld-moddev", manifest["name"])
                 self.assertEqual("2.0.0", manifest["version"])
 
+    def test_platform_skill_paths_resolve_from_plugin_root(self):
+        for platform in (".codex-plugin", ".cursor-plugin"):
+            with self.subTest(platform=platform):
+                manifest = read_json(ROOT / platform / "plugin.json")
+                skills_path = (ROOT / manifest["skills"]).resolve()
+                self.assertEqual(SKILLS.resolve(), skills_path)
+
     def test_catalog_matches_skill_directories(self):
-        catalog = read_json(PACKAGE / "skills/catalog.json")
+        catalog = read_json(SKILLS / "catalog.json")
         catalog_names = {skill["name"] for skill in catalog["skills"]}
         skill_names = {
             child.name
-            for child in (PACKAGE / "skills").iterdir()
+            for child in SKILLS.iterdir()
             if child.is_dir() and (child / "SKILL.md").is_file()
         }
         self.assertEqual(skill_names, catalog_names)
@@ -102,10 +128,12 @@ class PluginStructureTest(unittest.TestCase):
             catalog_names,
         )
         self.assertNotIn("imageOnly", catalog)
+        duplicates = list(ROOT.rglob("skills/catalog.json"))
+        self.assertEqual([SKILLS / "catalog.json"], duplicates)
 
     def test_relative_markdown_links_resolve(self):
         pattern = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
-        for markdown in (PACKAGE / "skills").rglob("*.md"):
+        for markdown in SKILLS.rglob("*.md"):
             text = markdown.read_text(encoding="utf-8")
             for target in pattern.findall(text):
                 if "://" in target or target.startswith("#"):
@@ -118,7 +146,7 @@ class PluginStructureTest(unittest.TestCase):
                     )
 
     def test_art_skill_has_required_specializations(self):
-        art = PACKAGE / "skills/rimworld-art"
+        art = SKILLS / "rimworld-art"
         expected = {
             "apparel-alignment.md",
             "render-space.md",

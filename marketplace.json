@@ -2,6 +2,6 @@
   "name": "rimworld-moddev-skill",
   "description": "RimWorld 1.6/1.7 mod 开发、调试、发行与美术技能。",
   "plugins": [
-    {"name": "rimworld-moddev", "source": "./rimworld-moddev", "version": "2.0.0", "category": "developer-tools"}
+    {"name": "rimworld-moddev", "source": "./", "version": "2.0.0", "category": "developer-tools"}
   ]
 }

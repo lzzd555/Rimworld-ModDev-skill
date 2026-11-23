@@ -37,11 +37,11 @@
 - Codex：用 `codex plugin marketplace add pxy6666/Rimworld-ModDev-skill` 添加市场，再用 `codex plugin add rimworld-moddev@rimworld-moddev-skill` 安装。
 - Claude Code：用 `/plugin marketplace add pxy6666/Rimworld-ModDev-skill` 添加市场，再用 `/plugin install rimworld-moddev@rimworld-moddev-skill` 安装。
 - ZCode：在设置的插件市场中添加本 GitHub 仓库并安装 `rimworld-moddev`。
-- Antigravity / Cursor-style local install：克隆仓库；本地插件根目录是 `./rimworld-moddev`，它是路径而不是要执行的命令。Antigravity 可运行 `agy plugin validate ./rimworld-moddev`、`agy plugin install ./rimworld-moddev`，再用 `agy plugin list --json` 检查。Cursor-style 客户端请选择/导入这个本地插件根目录文件夹。
+- Antigravity / Cursor-style local install：克隆仓库后，仓库根目录 `.` 就是本地插件根。Antigravity 可运行 `agy plugin validate .`、`agy plugin install .`，再用 `agy plugin list --json` 检查。Cursor-style 客户端请选择或导入仓库根目录。
 
 ### Codex / Cursor 手动安装
 
-克隆或下载本仓库，把 `rimworld-moddev/skills/` 中**所有技能文件夹和 catalog.json 整体复制**到目标 mod 工程的 `.agents/skills/`：
+克隆或下载本仓库，把根目录 `skills/` 中**所有技能文件夹和 catalog.json 整体复制**到目标 mod 工程的 `.agents/skills/`：
 
 ```text
 YourMod/
@@ -179,7 +179,7 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 ## 工具与资源准备
 
-普通图标、物件、建筑、UI 或单张贴图按普通美术流程处理；批量换款、多方向或需要地图图和菜单图标配套时，进入 [GFX 批量流程](rimworld-moddev/skills/rimworld-art/references/gfx-batch.md)。Apparel、穿戴图或身体覆盖层必须先制作身体加服装的合成基准，再检查身体锚点和遮挡。坐标、render layer 和 shader 是三个独立检查，不能用其中一个检查代替另外两个。验收还要分别记录 source、文件、绑定/同步和 game 状态；没有实际工具输出以及后续绑定证据，不能宣称生成文件成功或视觉完成。
+普通图标、物件、建筑、UI 或单张贴图按普通美术流程处理；批量换款、多方向或需要地图图和菜单图标配套时，进入 [GFX 批量流程](skills/rimworld-art/references/gfx-batch.md)。Apparel、穿戴图或身体覆盖层必须先制作身体加服装的合成基准，再检查身体锚点和遮挡。坐标、render layer 和 shader 是三个独立检查，不能用其中一个检查代替另外两个。验收还要分别记录 source、文件、绑定/同步和 game 状态；没有实际工具输出以及后续绑定证据，不能宣称生成文件成功或视觉完成。
 
 按任务使用 [RimSage](https://github.com/realloon/RimSage)、[RimSearcher](https://github.com/kearril/RimSearcher)、[DecompilerServer](https://github.com/pardeike/DecompilerServer) 或已有检索工具，不要求同时安装全部能力。原始 XML、源码/DLL 和运行时 Def 各回答不同问题；MCP 不可用或版本不匹配时记录回退原因及剩余缺口。
 
@@ -187,15 +187,15 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 游戏路径与相关程序集由使用方提供；C# 任务才准备适合目标游戏/上游的构建环境。贴图、声音和文本只请求本功能真正需要的部分，允许经确认的原版/上游运行时资源引用。图像来源偏好可记录在项目中，实际能否生成还要检查当前工具。
 
-需要查当前安装时，按 [本地批量查证](rimworld-moddev/skills/rimworld-mod/references/local-lookup.md) 查询 Def、父模板、类型、成员和静态引用。XML 查询只需 Python；首次构建 DLL 索引才需可用 .NET SDK，需要方法体时才按构建缓存反编译结果。缓存保存在本机。精选 `catalog.py` 仍可用于已记录的构建基线，迁移方向由 `compatibility.py` 查询。查不到不等于接口删除，静态资料不代替游戏实测。
+需要查当前安装时，按 [本地批量查证](skills/rimworld-mod/references/local-lookup.md) 查询 Def、父模板、类型、成员和静态引用。XML 查询只需 Python；首次构建 DLL 索引才需可用 .NET SDK，需要方法体时才按构建缓存反编译结果。缓存保存在本机。精选 `catalog.py` 仍可用于已记录的构建基线，迁移方向由 `compatibility.py` 查询。查不到不等于接口删除，静态资料不代替游戏实测。
 
 此仓库分发技能、查询脚本、精选资料和发行打包器。提到的工程 `tools/preflight.ps1`、`tools/mod.ps1`、统计查询或资源导入助手，只有目标工程实际提供时才使用。
 
 ## 发行与 Steam 工坊
 
-先用 [rimworld-release](rimworld-moddev/skills/rimworld-release/SKILL.md) 核对游戏验收记录并打包。项目没有配套打包器时，从本仓库完整 checkout，以 Python 3.11+ 运行 `python <checkout>/tools/mod_cli.py package --root <Mod工程根> --target 1.7`，目标为 1.6 时替换参数。它会在工程下生成发行目录、文件哈希和发行收据。
+先用 [rimworld-release](skills/rimworld-release/SKILL.md) 核对游戏验收记录并打包。项目没有配套打包器时，从本仓库完整 checkout，以 Python 3.11+ 运行 `python <checkout>/tools/mod_cli.py package --root <Mod工程根> --target 1.7`，目标为 1.6 时替换参数。它会在工程下生成发行目录、文件哈希和发行收据。
 
-使用 [rimworld-publish](rimworld-moddev/skills/rimworld-publish/SKILL.md) 离线制定计划，核对具体发行目录及其验收记录、目标物品和明确选定的页面改动。更新默认只提交 Mod 内容；已存在的页面字段按用户明确选择修改。主图或截图超过 1MB 时自动压缩同一张图（主图 PNG、截图 JPEG，需 Pillow）；`--append-requirements` 按 About.xml 的 modDependencies/loadAfter 自动追加含 DLC 标注与工坊链接的前置段。确认计划并授权后，使用已登录的 Windows Steam 桌面客户端上传。保留本地 journal 以续传；结果未知时先查证再继续。[上传与恢复](rimworld-moddev/skills/rimworld-publish/references/upload.md)
+使用 [rimworld-publish](skills/rimworld-publish/SKILL.md) 离线制定计划，核对具体发行目录及其验收记录、目标物品和明确选定的页面改动。更新默认只提交 Mod 内容；已存在的页面字段按用户明确选择修改。主图或截图超过 1MB 时自动压缩同一张图（主图 PNG、截图 JPEG，需 Pillow）；`--append-requirements` 按 About.xml 的 modDependencies/loadAfter 自动追加含 DLC 标注与工坊链接的前置段。确认计划并授权后，使用已登录的 Windows Steam 桌面客户端上传。保留本地 journal 以续传；结果未知时先查证再继续。[上传与恢复](skills/rimworld-publish/references/upload.md)
 
 ## 更新与反馈
 
@@ -209,7 +209,7 @@ RimWorld ModDev Skill covers mod development, debugging, migration, art and rele
 
 Install one `rimworld-moddev` plugin and call the entry that matches the task. Non-art workflows do not require image generation. For art, use an actually available image tool or user-provided assets; the skill does not supply that service.
 
-For manual setup, copy all skill folders and `catalog.json` from `rimworld-moddev/skills/` into your mod project's `.agents/skills/`, keeping references, scripts and data. The local plugin root is `./rimworld-moddev` (a path, not a command). For Antigravity, run `agy plugin validate ./rimworld-moddev`, `agy plugin install ./rimworld-moddev`, and `agy plugin list --json`. For Cursor-style clients, select/import the local plugin-root folder, or use the unified marketplace commands above.
+For manual setup, copy all skill folders and `catalog.json` from the repository-root `skills/` directory into your mod project's `.agents/skills/`, keeping references, scripts and data. The repository root `.` is the local plugin root. For Antigravity, run `agy plugin validate .`, `agy plugin install .`, and `agy plugin list --json`. For Cursor-style clients, select or import the repository root, or use the unified marketplace commands above.
 
 Start with `rimworld-help` or `rimworld-setup`. For development, provide your game version, project/game paths, intended player behavior, constraints, and any selected upstream mods. Choose user-controlled values, agent-decided values, or a mixed mode. The agent establishes the actual content type, verifies templates/defaults and interfaces, records a concrete plan, and obtains confirmation before implementation unless an applicable prior approval or explicit delegation already exists.
 
@@ -225,4 +225,4 @@ For migration, choose compatibility-first or improved implementation; if unspeci
 
 Project records support incremental additions and resuming work. Evidence is reused only while its source and conditions remain valid. The repository includes selected build catalogs, query scripts and a release packager.
 
-For Workshop publishing, prepare a checked release directory with `rimworld-release`. Use `rimworld-publish` to plan and authorize an upload of that exact directory. Existing page fields are changed only when selected explicitly. Oversized previews and screenshots are re-encoded under the 1MB limit without substituting different art, and `--append-requirements` appends an About.xml-derived requirements section (DLC tags, Workshop links) to the selected descriptions. Upload uses the Windows Steam desktop session. Keep the journal to resume a failed attempt, and verify ambiguous outcomes before retrying. [Upload and recovery](rimworld-moddev/skills/rimworld-publish/references/upload.md)
+For Workshop publishing, prepare a checked release directory with `rimworld-release`. Use `rimworld-publish` to plan and authorize an upload of that exact directory. Existing page fields are changed only when selected explicitly. Oversized previews and screenshots are re-encoded under the 1MB limit without substituting different art, and `--append-requirements` appends an About.xml-derived requirements section (DLC tags, Workshop links) to the selected descriptions. Upload uses the Windows Steam desktop session. Keep the journal to resume a failed attempt, and verify ambiguous outcomes before retrying. [Upload and recovery](skills/rimworld-publish/references/upload.md)
