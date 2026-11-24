@@ -1,10 +1,13 @@
 {
   "name": "rimworld-moddev-skill",
+  "owner": {
+    "name": "pxy6666"
+  },
   "interface": {"displayName": "RimWorld ModDev Skill"},
   "plugins": [
     {
       "name": "rimworld-moddev",
-      "source": {"source": "local", "path": "./"},
+      "source": {"source": "url", "url": "./"},
       "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
       "category": "Developer Tools"
     }

@@ -35,6 +35,7 @@
 ### Codex、Claude Code、ZCode 与 Antigravity
 
 - Codex：用 `codex plugin marketplace add pxy6666/Rimworld-ModDev-skill` 添加市场，再用 `codex plugin add rimworld-moddev@rimworld-moddev-skill` 安装。
+- GitHub Copilot CLI：用 `copilot plugin marketplace add pxy6666/Rimworld-ModDev-skill` 添加市场，再用 `copilot plugin install rimworld-moddev@rimworld-moddev-skill` 安装。
 - Claude Code：用 `/plugin marketplace add pxy6666/Rimworld-ModDev-skill` 添加市场，再用 `/plugin install rimworld-moddev@rimworld-moddev-skill` 安装。
 - ZCode：在设置的插件市场中添加本 GitHub 仓库并安装 `rimworld-moddev`。
 - Antigravity / Cursor-style local install：克隆仓库后，仓库根目录 `.` 就是本地插件根。Antigravity 可运行 `agy plugin validate .`、`agy plugin install .`，再用 `agy plugin list --json` 检查。Cursor-style 客户端请选择或导入仓库根目录。
@@ -208,6 +209,8 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 RimWorld ModDev Skill covers mod development, debugging, migration, art and release for RimWorld 1.6 and 1.7. Version **2.0.0** consolidates the former variants into one `rimworld-moddev` plugin with 12 task-routed entries, including `rimworld-art`.
 
 Install one `rimworld-moddev` plugin and call the entry that matches the task. Non-art workflows do not require image generation. For art, use an actually available image tool or user-provided assets; the skill does not supply that service.
+
+For GitHub Copilot CLI, register the marketplace with `copilot plugin marketplace add pxy6666/Rimworld-ModDev-skill`, then install `rimworld-moddev@rimworld-moddev-skill` with `copilot plugin install rimworld-moddev@rimworld-moddev-skill`.
 
 For manual setup, copy all skill folders and `catalog.json` from the repository-root `skills/` directory into your mod project's `.agents/skills/`, keeping references, scripts and data. The repository root `.` is the local plugin root. For Antigravity, run `agy plugin validate .`, `agy plugin install .`, and `agy plugin list --json`. For Cursor-style clients, select or import the repository root, or use the unified marketplace commands above.
 

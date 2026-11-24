@@ -85,6 +85,26 @@ class PluginStructureTest(unittest.TestCase):
                 self.assertEqual("rimworld-moddev", plugins[0]["name"])
                 self.assertIn(source_path(plugins[0]["source"]), (".", "./"))
 
+    def test_copilot_marketplace_has_required_owner_and_url_source(self):
+        marketplace = read_json(ROOT / "marketplace.json")
+        self.assertEqual("rimworld-moddev-skill", marketplace["name"])
+        owner = marketplace.get("owner")
+        self.assertIsInstance(owner, dict, "Copilot marketplace owner is required")
+        self.assertEqual("pxy6666", owner.get("name"))
+        plugin = marketplace["plugins"][0]
+        self.assertIn(source_path(plugin["source"]), (".", "./"))
+
+    def test_readme_documents_github_copilot_cli_install(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "copilot plugin marketplace add pxy6666/Rimworld-ModDev-skill",
+            readme,
+        )
+        self.assertIn(
+            "copilot plugin install rimworld-moddev@rimworld-moddev-skill",
+            readme,
+        )
+
     def test_platform_manifests_use_unified_identity(self):
         for path in PLATFORM_MANIFESTS:
             with self.subTest(path=path):
