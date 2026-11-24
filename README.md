@@ -4,7 +4,7 @@
 
 核心顺序是：**先确认用途与真实类型，再查模板和默认值；真正未定的玩法数值与资源才交给玩家或 CLI 决定。**
 
-当前版本为 **2.1.0**。统一插件支持按 1.6 / 1.7 分流制作、排错和迁移，并按任务调用资源与发行流程。发行可交给工坊发布技能，按已验收的发行目录和确认过的页面更新计划上传；超 1MB 的主图/截图自动压缩同一张图，并可按 About.xml 依赖在描述末尾生成前置段。技能内容包含 AI 辅助编写；静态检查、编译、游戏内验证和上传结果分别记录。
+当前版本为 **2.1.0**。统一插件支持按 1.6 / 1.7 分流制作、排错和迁移，并按任务调用资源与发行流程。发行可交给工坊发布技能，按已验收的发行目录上传；每次发布都提交完整页面（描述、按 About.xml 生成的前置段、必需项目与 DLC 依赖、语言槽），超 1MB 的主图/截图自动压缩同一张图。技能内容包含 AI 辅助编写；静态检查、编译、游戏内验证和上传结果分别记录。
 
 ## 统一安装；按任务调用
 
@@ -21,7 +21,7 @@
 | `rimworld-setup` | 检查游戏路径、编译环境、检索/MCP 和必要工具能力 |
 | `rimworld-mod` / `rimworld-debug` | 版本未定、双版本或继续使用旧名称时的路由入口 |
 | `rimworld-release` | 核对成果、依赖与资源来源，生成本地发行目录、清单和收据 |
-| `rimworld-publish` | 用户授权后将经核验的发行目录上传到 Steam 工坊；可用同一记录续传 |
+| `rimworld-publish` | 用户授权后将经核验的发行目录连同完整工坊页面（描述、必需项目与 DLC 依赖）上传到 Steam；可用同一记录续传 |
 | `rimworld-art` | 普通美术、批量资源、Apparel 身体基准合成、渲染对位与视觉验收 |
 | `rimworld-sound` | 音效设计、材质与尺度、制作/剪辑、动画同步、循环、响度与 SoundDef 契约 |
 
@@ -201,7 +201,7 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 先用 [rimworld-release](skills/rimworld-release/SKILL.md) 核对游戏验收记录并打包。项目没有配套打包器时，从本仓库完整 checkout，以 Python 3.11+ 运行 `python <checkout>/tools/mod_cli.py package --root <Mod工程根> --target 1.7`，目标为 1.6 时替换参数。它会在工程下生成发行目录、文件哈希和发行收据。
 
-使用 [rimworld-publish](skills/rimworld-publish/SKILL.md) 离线制定计划，核对具体发行目录及其验收记录、目标物品和明确选定的页面改动。更新默认只提交 Mod 内容；已存在的页面字段按用户明确选择修改。主图或截图超过 1MB 时自动压缩同一张图（主图 PNG、截图 JPEG，需 Pillow）；`--append-requirements` 按 About.xml 的 modDependencies/loadAfter 自动追加含 DLC 标注与工坊链接的前置段。确认计划并授权后，使用已登录的 Windows Steam 桌面客户端上传。保留本地 journal 以续传；结果未知时先查证再继续。[上传与恢复](skills/rimworld-publish/references/upload.md)
+使用 [rimworld-publish](skills/rimworld-publish/SKILL.md) 离线制定计划，核对具体发行目录及其验收记录和目标物品。每次发布都是完整发布：描述、按 About.xml（含按版本声明的依赖）生成的前置段、必需项目与 DLC 依赖、其他语言槽和变更说明都是必做项，缺项时计划直接拒绝；新建后把物品 ID 写回工程并重新打包再提交一次。可见性和截图由用户决定。主图或截图超过 1MB 时自动压缩同一张图（主图 PNG、截图 JPEG，需 Pillow）。确认计划并授权后，使用已登录的 Windows Steam 桌面客户端上传。保留本地 journal 以续传；结果未知时先查证再继续。[上传与恢复](skills/rimworld-publish/references/upload.md)
 
 ## 更新与反馈
 
@@ -235,4 +235,4 @@ For migration, choose compatibility-first or improved implementation; if unspeci
 
 Project records support incremental additions and resuming work. Evidence is reused only while its source and conditions remain valid. The repository includes selected build catalogs, query scripts and a release packager.
 
-For Workshop publishing, prepare a checked release directory with `rimworld-release`. Use `rimworld-publish` to plan and authorize an upload of that exact directory. Existing page fields are changed only when selected explicitly. Oversized previews and screenshots are re-encoded under the 1MB limit without substituting different art, and `--append-requirements` appends an About.xml-derived requirements section (DLC tags, Workshop links) to the selected descriptions. Upload uses the Windows Steam desktop session. Keep the journal to resume a failed attempt, and verify ambiguous outcomes before retrying. [Upload and recovery](skills/rimworld-publish/references/upload.md)
+For Workshop publishing, prepare a checked release directory with `rimworld-release`. Use `rimworld-publish` to plan and authorize an upload of that exact directory. Every publish is complete: the description with an About.xml-derived requirements section (DLC tags, Workshop links), Required Items and DLC dependencies, other language slots and, on updates, a change note are mandatory, and a plan missing any of them is rejected. After a first upload the item ID is written back to the project and the repackaged content is submitted once more. Visibility and screenshots are the user's decisions. Oversized previews and screenshots are re-encoded under the 1MB limit without substituting different art. Upload uses the Windows Steam desktop session. Keep the journal to resume a failed attempt, and verify ambiguous outcomes before retrying. [Upload and recovery](skills/rimworld-publish/references/upload.md)

@@ -4,6 +4,7 @@ import ctypes as C
 import os
 import platform
 import re
+import struct
 import sys
 import tempfile
 import threading
@@ -156,6 +157,9 @@ def _abi(pack):
                            ('creator_app_id', u32), ('consumer_app_id', u32), ('title', C.c_char * 129),
                            ('description', C.c_char * 8000), ('owner', u64), ('created', u32), ('updated', u32),
                            ('added', u32), ('visibility', i32)]),
+        # GetAppDependenciesResult_t arrives as 148 bytes whose field offsets differ by platform;
+        # _app_dependencies() locates them by validating the item ID instead of trusting one layout.
+        'appDependencies': _packed('AppDependenciesResult', 1, [('result', i32), ('payload', C.c_uint8 * 144)]),
     }
 
 
@@ -318,6 +322,26 @@ class SteamworksUGC:
             fn = getattr(self._lib, name)
             fn.restype, fn.argtypes = result, params
 
+    def _bind_dependencies(self):
+        """Bind the Required Items/DLC calls on first use, so uploads never depend on them."""
+        if hasattr(self, '_dependency_specs'):
+            return
+        void, u64, u32, i32, flag = C.c_void_p, C.c_uint64, C.c_uint32, C.c_int32, C.c_bool
+        specs = {
+            'SteamAPI_ISteamUGC_AddDependency': (flag, [void, u64, u64]),
+            'SteamAPI_ISteamUGC_AddAppDependency': (flag, [void, u64, u32]),
+            'SteamAPI_ISteamUGC_SetReturnChildren': (flag, [void, u64, flag]),
+            'SteamAPI_ISteamUGC_GetQueryUGCChildren': (i32, [void, u64, u32, C.POINTER(u64), u32]),
+            'SteamAPI_ISteamUGC_GetAppDependencies': (u64, [void, u64]),
+        }
+        missing = [name for name in specs if not hasattr(self._lib, name)]
+        if missing:
+            raise SteamworksError('Steamworks 库缺少必需项目/DLC 依赖接口：' + ', '.join(missing))
+        for name, (result, params) in specs.items():
+            fn = getattr(self._lib, name)
+            fn.restype, fn.argtypes = result, params
+        self._dependency_specs = specs
+
     def logged_on(self):
         return bool(self._lib.SteamAPI_ISteamUser_BLoggedOn(self._user))
 
@@ -406,6 +430,56 @@ class SteamworksUGC:
 
     def remove_screenshot(self, handle, index):
         self._setter('RemoveItemPreview', handle, index)
+
+    def add_dependency(self, handle, child):
+        """Queue a Workshop Required Items entry for the next submit."""
+        self._bind_dependencies()
+        self._setter('AddDependency', handle, parse_file_id(child))
+
+    def add_app_dependency(self, handle, app_id):
+        """Queue a DLC the player must own for the next submit."""
+        self._bind_dependencies()
+        self._setter('AddAppDependency', handle, app_id)
+
+    def query_dependencies(self, file_id):
+        """Read the Required Items and DLC dependencies Steam currently holds for one item."""
+        self._bind_dependencies()
+        file_id = parse_file_id(file_id)
+        return {'items': self._children(file_id), 'apps': self._app_dependencies(file_id)}
+
+    def _children(self, file_id):
+        ids = (C.c_uint64 * 1)(file_id)
+        q = self._ugc_call('CreateQueryUGCDetailsRequest', ids, 1)
+        if q in (0, _MAX_HANDLE):
+            raise SteamworksError('CreateQueryUGCDetailsRequest 返回无效句柄')
+        try:
+            for option, value in (('SetReturnChildren', True), ('SetAllowCachedResponse', 0)):
+                self._setter(option, q, value)
+            call = self._ugc_call('SendQueryUGCRequest', q)
+            reply = self._wait_apicall(call, 3401, self._types['query'], 'SendQueryUGCRequest')
+            _result_ok(reply.result, 'SendQueryUGCRequest')
+            if reply.handle != q or reply.returned != 1:
+                raise SteamworksError('必需项目查询未返回请求的唯一结果（可能不存在或当前账户不可见）')
+            children = (C.c_uint64 * 64)()
+            # Older libraries return a count and newer ones a flag; the zeroed buffer serves both.
+            self._ugc_call('GetQueryUGCChildren', q, 0, children, 64)
+            return [value for value in children if value]
+        finally:
+            self._ugc_call('ReleaseQueryUGCRequest', q)
+
+    def _app_dependencies(self, file_id):
+        call = self._ugc_call('GetAppDependencies', file_id)
+        reply = self._wait_apicall(call, 3416, self._types['appDependencies'], 'GetAppDependencies')
+        _result_ok(reply.result, 'GetAppDependencies')
+        raw = bytes(reply.payload)  # message bytes 4..148; the count is the last word of both layouts
+        count = struct.unpack_from('<I', raw, 140)[0]
+        # (item ID, AppId[32]) start at message offset 4 on pack-4 platforms (observed on macOS)
+        # and at 8 with the 64-bit alignment of pack-8 Windows.
+        for offset in (0, 4):
+            item, *apps = struct.unpack_from('<Q32I', raw, offset)
+            if item == file_id and count <= 32:
+                return apps[:count]
+        raise SteamworksError('DLC 依赖回读的数据布局与已知布局不符，无法确认结果')
 
     def submit(self, handle, changenote=''):
         file_id = self._updates.pop(handle, None)
