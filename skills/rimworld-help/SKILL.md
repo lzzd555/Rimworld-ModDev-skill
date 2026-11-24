@@ -18,6 +18,8 @@ description: 引导首次接触 RimWorld mod 工具链的用户开始工作，�
 - 用户要批量统一风格：进入 [美术技能](../rimworld-art/SKILL.md) 的批量 GFX 路线，先锁定基准稿和消费者映射。
 - 用户要 Apparel/穿戴图：进入 [美术技能](../rimworld-art/SKILL.md) 的 Apparel 对位路线，准备身体基准和交接证据。
 - 用户要动画或图层敏感渲染：进入 [美术技能](../rimworld-art/SKILL.md) 的渲染空间路线，绑定修改仍交回 rimworld-mod。
+- 用户要制作、编辑或替换音效：进入独立的 [声音技能](../rimworld-sound/SKILL.md)，先确定事件、材质、时长、循环与试听样稿。
+- 用户要让音效配合动画、持续飞行、冲击材质或调整响度：仍进入 [声音技能](../rimworld-sound/SKILL.md)；播放触发与 SoundDef 绑定交回 rimworld-mod。
 
 首次使用且目标工程实际提供脚本时，可运行 `powershell -NoProfile -File tools/preflight.ps1` 做只读检查，不依赖 Python、不安装软件。没有该脚本则进入 setup 核对相关能力，不运行缺失命令或强加目录。
 

@@ -1,7 +1,7 @@
 {
   "name": "rimworld-moddev",
-  "version": "2.0.0",
-  "description": "RimWorld 1.6/1.7 mod development skills plus the independent rimworld-art workflow.",
+  "version": "2.1.0",
+  "description": "RimWorld 1.6/1.7 mod development skills plus independent rimworld-art and rimworld-sound workflows.",
   "author": {
     "name": "pxy6666"
   },
@@ -10,7 +10,8 @@
     "rimworld",
     "mod",
     "skills",
-    "art"
+    "art",
+    "sound"
   ],
   "skills": "./skills/"
 }

@@ -4,11 +4,11 @@
 
 核心顺序是：**先确认用途与真实类型，再查模板和默认值；真正未定的玩法数值与资源才交给玩家或 CLI 决定。**
 
-当前版本为 **2.0.0**。统一插件支持按 1.6 / 1.7 分流制作、排错和迁移，并按任务调用资源与发行流程。发行可交给工坊发布技能，按已验收的发行目录和确认过的页面更新计划上传；超 1MB 的主图/截图自动压缩同一张图，并可按 About.xml 依赖在描述末尾生成前置段。技能内容包含 AI 辅助编写；静态检查、编译、游戏内验证和上传结果分别记录。
+当前版本为 **2.1.0**。统一插件支持按 1.6 / 1.7 分流制作、排错和迁移，并按任务调用资源与发行流程。发行可交给工坊发布技能，按已验收的发行目录和确认过的页面更新计划上传；超 1MB 的主图/截图自动压缩同一张图，并可按 About.xml 依赖在描述末尾生成前置段。技能内容包含 AI 辅助编写；静态检查、编译、游戏内验证和上传结果分别记录。
 
 ## 统一安装；按任务调用
 
-现在只安装一个 `rimworld-moddev` 插件包，不再选择插件变体。统一包包含 12 个入口，其中 `rimworld-art` 是第 12 个入口，负责普通美术、批量资源、Apparel 对位和视觉验收。非美术工作流不要求图像生成；需要时才由 `rimworld-art` 使用实际可用的图像工具或用户提供的素材。
+现在只安装一个 `rimworld-moddev` 插件包，不再选择插件变体。统一包包含 13 个入口；`rimworld-art` 负责视觉资源，`rimworld-sound` 负责音效设计、制作、循环与声音验收。非美术/音频工作流不要求对应生成工具；需要时才使用实际可用的工具或用户提供的素材。
 
 ## 按版本选择入口
 
@@ -23,6 +23,7 @@
 | `rimworld-release` | 核对成果、依赖与资源来源，生成本地发行目录、清单和收据 |
 | `rimworld-publish` | 用户授权后将经核验的发行目录上传到 Steam 工坊；可用同一记录续传 |
 | `rimworld-art` | 普通美术、批量资源、Apparel 身体基准合成、渲染对位与视觉验收 |
+| `rimworld-sound` | 音效设计、材质与尺度、制作/剪辑、动画同步、循环、响度与 SoundDef 契约 |
 
 ## 安装
 
@@ -54,6 +55,7 @@ YourMod/
     ├── rimworld-17-debug/
     ├── rimworld-17-migrate/
     ├── rimworld-art/
+    ├── rimworld-sound/
     ├── rimworld-help/
     ├── rimworld-setup/
     ├── rimworld-mod/
@@ -78,6 +80,7 @@ Cursor 也支持项目级 `.agents/skills/` 与 `.cursor/skills/`。两客户端
 2. 安装统一插件 `rimworld-moddev`；
 3. 继续使用已有的制作、排错、迁移、发行和发布入口；
 4. 图像任务交给 `rimworld-help` 路由到 `rimworld-art`，或直接调用 `rimworld-art`。
+5. 音效任务交给 `rimworld-help` 路由到 `rimworld-sound`，或直接调用 `rimworld-sound`。
 
 旧版两个插件不应与 2.0.0 统一插件同时启用。迁移不会改变已有工程的入口名称；只需按新的统一安装路径更新技能文件。
 
@@ -182,6 +185,8 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 普通图标、物件、建筑、UI 或单张贴图按普通美术流程处理；批量换款、多方向或需要地图图和菜单图标配套时，进入 [GFX 批量流程](skills/rimworld-art/references/gfx-batch.md)。Apparel、穿戴图或身体覆盖层必须先制作身体加服装的合成基准，再检查身体锚点和遮挡。坐标、render layer 和 shader 是三个独立检查，不能用其中一个检查代替另外两个。验收还要分别记录 source、文件、绑定/同步和 game 状态；没有实际工具输出以及后续绑定证据，不能宣称生成文件成功或视觉完成。
 
+声音任务由 [rimworld-sound](skills/rimworld-sound/SKILL.md) 处理：先确认事件、材质、尺度和阶段时长，再制作试听样稿；循环必须验证首尾无缝，动画同步不能用变调伪造任意持续时间；文件响度、SoundDef 音量和游戏内听感分别检查。没有真实音频工具或实际试听产物时只停在 brief/缺口，不冒充音效完成。
+
 按任务使用 [RimSage](https://github.com/realloon/RimSage)、[RimSearcher](https://github.com/kearril/RimSearcher)、[DecompilerServer](https://github.com/pardeike/DecompilerServer) 或已有检索工具，不要求同时安装全部能力。原始 XML、源码/DLL 和运行时 Def 各回答不同问题；MCP 不可用或版本不匹配时记录回退原因及剩余缺口。
 
 美术批量生成前先审批代表性样例；样例通过后，再继续批量生成和其余风格。
@@ -206,7 +211,7 @@ python <当前rimworld-debug目录>/scripts/content_load.py check --root <mod根
 
 ## English quick start
 
-RimWorld ModDev Skill covers mod development, debugging, migration, art and release for RimWorld 1.6 and 1.7. Version **2.0.0** consolidates the former variants into one `rimworld-moddev` plugin with 12 task-routed entries, including `rimworld-art`.
+RimWorld ModDev Skill covers mod development, debugging, migration, art, sound and release for RimWorld 1.6 and 1.7. Version **2.1.0** provides 13 task-routed entries, including `rimworld-art` and `rimworld-sound`.
 
 Install one `rimworld-moddev` plugin and call the entry that matches the task. Non-art workflows do not require image generation. For art, use an actually available image tool or user-provided assets; the skill does not supply that service.
 
@@ -217,6 +222,8 @@ For manual setup, copy all skill folders and `catalog.json` from the repository-
 Start with `rimworld-help` or `rimworld-setup`. For development, provide your game version, project/game paths, intended player behavior, constraints, and any selected upstream mods. Choose user-controlled values, agent-decided values, or a mixed mode. The agent establishes the actual content type, verifies templates/defaults and interfaces, records a concrete plan, and obtains confirmation before implementation unless an applicable prior approval or explicit delegation already exists.
 
 For art, first approve a representative sample before batch generation. Worn graphics require a body-plus-apparel composite baseline. Check coordinates, render layer and shader separately, then record source-to-game states for files, binding, synchronization and in-game evidence. Generated-file output alone is not success without later binding evidence.
+
+For sound, approve a representative audible sample before producing variants. Record the event, material, scale, timing and loop behavior; check file loudness separately from SoundDef volume, and validate animation synchronization, repeated playback and in-game acceptance.
 
 ### 2.0.0 one-time migration
 

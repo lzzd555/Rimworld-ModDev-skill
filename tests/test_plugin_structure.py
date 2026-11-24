@@ -110,7 +110,7 @@ class PluginStructureTest(unittest.TestCase):
             with self.subTest(path=path):
                 manifest = read_json(path)
                 self.assertEqual("rimworld-moddev", manifest["name"])
-                self.assertEqual("2.0.0", manifest["version"])
+                self.assertEqual("2.1.0", manifest["version"])
 
     def test_platform_skill_paths_resolve_from_plugin_root(self):
         for platform in (".codex-plugin", ".cursor-plugin"):
@@ -128,8 +128,9 @@ class PluginStructureTest(unittest.TestCase):
             if child.is_dir() and (child / "SKILL.md").is_file()
         }
         self.assertEqual(skill_names, catalog_names)
-        self.assertEqual(12, len(catalog_names))
+        self.assertEqual(13, len(catalog_names))
         self.assertIn("rimworld-art", catalog_names)
+        self.assertIn("rimworld-sound", catalog_names)
         self.assertEqual(
             {
                 "rimworld-16-debug",
@@ -144,6 +145,7 @@ class PluginStructureTest(unittest.TestCase):
                 "rimworld-release",
                 "rimworld-setup",
                 "rimworld-art",
+                "rimworld-sound",
             },
             catalog_names,
         )
@@ -191,6 +193,31 @@ class PluginStructureTest(unittest.TestCase):
             self.assertIn(phrase, apparel)
         for phrase in ("坐标轴", "图层", "着色器", "无人机", "三者"):
             self.assertIn(phrase, render)
+
+    def test_sound_skill_has_required_specializations(self):
+        sound = SKILLS / "rimworld-sound"
+        expected = {
+            "sound-brief.md",
+            "sound-production.md",
+            "looping-and-sync.md",
+            "loudness-and-format.md",
+            "sound-acceptance.md",
+        }
+        self.assertEqual(
+            expected,
+            {path.name for path in (sound / "references").glob("*.md")},
+        )
+        skill = (sound / "SKILL.md").read_text(encoding="utf-8")
+        for phrase in (
+            "name: rimworld-sound",
+            "rimworld-mod",
+            "rimworld-debug",
+            "SoundDef",
+            "试听",
+            "循环",
+            "响度",
+        ):
+            self.assertIn(phrase, skill)
 
 
 if __name__ == "__main__":

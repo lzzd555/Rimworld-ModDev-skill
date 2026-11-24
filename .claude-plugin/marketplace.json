@@ -4,15 +4,15 @@
     "name": "pxy6666"
   },
   "metadata": {
-    "description": "RimWorld mod 开发、调试、发行与美术技能。"
+    "description": "RimWorld mod 开发、调试、发行、美术与音效技能。"
   },
   "plugins": [
     {
       "name": "rimworld-moddev",
       "source": "./",
-      "version": "2.0.0",
-      "description": "RimWorld mod 开发、调试、发行与独立 rimworld-art 美术技能。",
-      "keywords": ["rimworld", "mod", "skills", "art"]
+      "version": "2.1.0",
+      "description": "RimWorld mod 开发、调试、发行与独立 rimworld-art/rimworld-sound 技能。",
+      "keywords": ["rimworld", "mod", "skills", "art", "sound"]
     }
   ]
 }
